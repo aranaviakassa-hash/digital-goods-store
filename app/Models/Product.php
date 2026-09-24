@@ -29,4 +29,9 @@ class Product extends Model
             'bank_approved' => 'boolean',
         ];
     }
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
 }
