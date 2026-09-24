@@ -16,30 +16,41 @@ class ProductsTable
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->searchable(),
-                TextColumn::make('slug')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('category')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('supplier')
                     ->searchable(),
+
                 TextColumn::make('supplier_product_code')
+                    ->label('Supplier Code')
                     ->searchable(),
+
                 TextColumn::make('price')
-                    ->money()
+                    ->formatStateUsing(fn ($state, $record) => number_format((float) $state, 2) . ' ' . $record->currency)
                     ->sortable(),
-                TextColumn::make('currency')
-                    ->searchable(),
+
                 IconColumn::make('is_active')
+                    ->label('Active')
                     ->boolean(),
+
                 IconColumn::make('resale_verified')
+                    ->label('Resale Verified')
                     ->boolean(),
+
                 IconColumn::make('bank_approved')
+                    ->label('Bank Approved')
                     ->boolean(),
+
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()

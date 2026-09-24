@@ -19,4 +19,14 @@ class Product extends Model
         'bank_approved',
         'description',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'price' => 'decimal:2',
+            'is_active' => 'boolean',
+            'resale_verified' => 'boolean',
+            'bank_approved' => 'boolean',
+        ];
+    }
 }
