@@ -15,42 +15,50 @@ class OrdersTable
         return $table
             ->columns([
                 TextColumn::make('order_number')
-                    ->searchable(),
-                TextColumn::make('user_id')
-                    ->numeric()
+                    ->label('Order #')
+                    ->searchable()
                     ->sortable(),
-                TextColumn::make('status')
-                    ->searchable(),
-                TextColumn::make('payment_status')
-                    ->searchable(),
-                TextColumn::make('fulfillment_status')
-                    ->searchable(),
-                TextColumn::make('subtotal')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('total')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('currency')
-                    ->searchable(),
+
                 TextColumn::make('customer_email')
+                    ->label('Customer')
                     ->searchable(),
-                TextColumn::make('customer_name')
-                    ->searchable(),
+
+                TextColumn::make('status')
+                    ->badge()
+                    ->sortable(),
+
+                TextColumn::make('payment_status')
+                    ->label('Payment')
+                    ->badge()
+                    ->sortable(),
+
+                TextColumn::make('fulfillment_status')
+                    ->label('Fulfillment')
+                    ->badge()
+                    ->sortable(),
+
+                TextColumn::make('total')
+                    ->formatStateUsing(fn ($state, $record) => number_format((float) $state, 2) . ' ' . $record->currency)
+                    ->sortable(),
+
                 TextColumn::make('payment_provider')
-                    ->searchable(),
+                    ->label('Payment Provider')
+                    ->toggleable(),
+
                 TextColumn::make('payment_reference')
-                    ->searchable(),
+                    ->label('Payment Ref')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('supplier_reference')
-                    ->searchable(),
+                    ->label('Supplier Ref')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('created_at')
+                    ->label('Created')
                     ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
             ])
             ->filters([
                 //

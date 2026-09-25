@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Order extends Model
 {
@@ -29,6 +30,19 @@ class Order extends Model
             'subtotal' => 'decimal:2',
             'total' => 'decimal:2',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Order $order) {
+            if (blank($order->order_number)) {
+                do {
+                    $orderNumber = 'ORD-' . now()->format('Ymd') . '-' . strtoupper(Str::random(8));
+                } while (static::where('order_number', $orderNumber)->exists());
+
+                $order->order_number = $orderNumber;
+            }
+        });
     }
 
     public function items()
