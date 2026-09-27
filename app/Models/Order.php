@@ -38,8 +38,14 @@ class Order extends Model
         static::creating(function (Order $order) {
             if (blank($order->order_number)) {
                 do {
-                    $orderNumber = 'ORD-' . now()->format('Ymd') . '-' . strtoupper(Str::random(8));
-                } while (static::where('order_number', $orderNumber)->exists());
+                    $orderNumber =
+                        'ORD-' .
+                        now()->format('Ymd') .
+                        '-' .
+                        strtoupper(Str::random(8));
+                } while (
+                    static::where('order_number', $orderNumber)->exists()
+                );
 
                 $order->order_number = $orderNumber;
             }
@@ -49,6 +55,11 @@ class Order extends Model
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function paymentAttempts()
+    {
+        return $this->hasMany(PaymentAttempt::class);
     }
 
     public function user()

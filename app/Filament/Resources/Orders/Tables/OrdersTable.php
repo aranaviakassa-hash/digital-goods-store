@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\Orders\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -20,56 +18,76 @@ class OrdersTable
                     ->sortable(),
 
                 TextColumn::make('customer_email')
-                    ->label('Customer')
+                    ->label('Email')
                     ->searchable(),
 
-                TextColumn::make('status')
-                    ->badge()
+                TextColumn::make('sold_products')
+                    ->label('Product')
+                    ->state(
+                        fn ($record) =>
+                            $record->items
+                                ->map(
+                                    fn ($item) =>
+                                        $item->product_name .
+                                        ' x' .
+                                        $item->quantity
+                                )
+                                ->join(', ')
+                    ),
+
+                TextColumn::make('unit_prices')
+                    ->label('Price')
+                    ->state(
+                        fn ($record) =>
+                            $record->items
+                                ->map(
+                                    fn ($item) =>
+                                        number_format(
+                                            (float) $item->unit_price,
+                                            2
+                                        ) .
+                                        ' ' .
+                                        $item->currency
+                                )
+                                ->join(', ')
+                    ),
+
+                TextColumn::make('total')
+                    ->label('Total')
+                    ->formatStateUsing(
+                        fn ($state, $record) =>
+                            number_format(
+                                (float) $state,
+                                2
+                            ) .
+                            ' ' .
+                            $record->currency
+                    )
                     ->sortable(),
 
                 TextColumn::make('payment_status')
                     ->label('Payment')
-                    ->badge()
-                    ->sortable(),
+                    ->badge(),
 
                 TextColumn::make('fulfillment_status')
                     ->label('Fulfillment')
-                    ->badge()
-                    ->sortable(),
+                    ->badge(),
 
-                TextColumn::make('total')
-                    ->formatStateUsing(fn ($state, $record) => number_format((float) $state, 2) . ' ' . $record->currency)
-                    ->sortable(),
-
-                TextColumn::make('payment_provider')
-                    ->label('Payment Provider')
-                    ->toggleable(),
-
-                TextColumn::make('payment_reference')
-                    ->label('Payment Ref')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                TextColumn::make('supplier_reference')
-                    ->label('Supplier Ref')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('status')
+                    ->label('Status')
+                    ->badge(),
 
                 TextColumn::make('created_at')
-                    ->label('Created')
+                    ->label('Date')
                     ->dateTime()
                     ->sortable(),
-            ])
-            ->filters([
-                //
             ])
             ->recordActions([
                 EditAction::make(),
             ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->defaultSort(
+                'created_at',
+                'desc'
+            );
     }
 }
