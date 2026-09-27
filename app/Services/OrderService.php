@@ -13,6 +13,18 @@ class OrderService
     public function createOrder(array $data): Order
     {
         return DB::transaction(function () use ($data) {
+            $idempotencyKey = $data['idempotency_key'] ?? null;
+
+            if ($idempotencyKey) {
+                $existingOrder = Order::query()
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->first();
+
+                if ($existingOrder) {
+                    return $existingOrder->load('items');
+                }
+            }
+
             $product = Product::query()
                 ->whereKey($data['product_id'])
                 ->where('is_active', true)
@@ -27,6 +39,7 @@ class OrderService
             $quantity = max((int) ($data['quantity'] ?? 1), 1);
 
             $order = Order::create([
+                'idempotency_key' => $idempotencyKey,
                 'user_id' => $data['user_id'] ?? null,
                 'status' => 'pending',
                 'payment_status' => 'unpaid',
