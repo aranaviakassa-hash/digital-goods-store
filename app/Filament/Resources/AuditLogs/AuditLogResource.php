@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\AuditLogs;
 
-use App\Filament\Resources\AuditLogs\Pages\CreateAuditLog;
-use App\Filament\Resources\AuditLogs\Pages\EditAuditLog;
 use App\Filament\Resources\AuditLogs\Pages\ListAuditLogs;
 use App\Filament\Resources\AuditLogs\Schemas\AuditLogForm;
 use App\Filament\Resources\AuditLogs\Tables\AuditLogsTable;
@@ -19,7 +17,8 @@ class AuditLogResource extends Resource
 {
     protected static ?string $model = AuditLog::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon =
+        Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'event';
 
@@ -48,6 +47,11 @@ class AuditLogResource extends Resource
         return false;
     }
 
+    public static function canDeleteAny(): bool
+    {
+        return false;
+    }
+
     public static function getRelations(): array
     {
         return [];
@@ -57,8 +61,6 @@ class AuditLogResource extends Resource
     {
         return [
             'index' => ListAuditLogs::route('/'),
-            'create' => CreateAuditLog::route('/create'),
-            'edit' => EditAuditLog::route('/{record}/edit'),
         ];
     }
 }

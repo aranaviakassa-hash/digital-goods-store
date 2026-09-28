@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\FulfillmentAttempts;
 
-use App\Filament\Resources\FulfillmentAttempts\Pages\CreateFulfillmentAttempt;
-use App\Filament\Resources\FulfillmentAttempts\Pages\EditFulfillmentAttempt;
 use App\Filament\Resources\FulfillmentAttempts\Pages\ListFulfillmentAttempts;
 use App\Filament\Resources\FulfillmentAttempts\Schemas\FulfillmentAttemptForm;
 use App\Filament\Resources\FulfillmentAttempts\Tables\FulfillmentAttemptsTable;
@@ -19,7 +17,8 @@ class FulfillmentAttemptResource extends Resource
 {
     protected static ?string $model = FulfillmentAttempt::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon =
+        Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'status';
 
@@ -48,6 +47,11 @@ class FulfillmentAttemptResource extends Resource
         return false;
     }
 
+    public static function canDeleteAny(): bool
+    {
+        return false;
+    }
+
     public static function getRelations(): array
     {
         return [];
@@ -57,8 +61,6 @@ class FulfillmentAttemptResource extends Resource
     {
         return [
             'index' => ListFulfillmentAttempts::route('/'),
-            'create' => CreateFulfillmentAttempt::route('/create'),
-            'edit' => EditFulfillmentAttempt::route('/{record}/edit'),
         ];
     }
 }

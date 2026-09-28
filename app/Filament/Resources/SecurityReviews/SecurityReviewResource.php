@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\SecurityReviews;
 
-use App\Filament\Resources\SecurityReviews\Pages\CreateSecurityReview;
-use App\Filament\Resources\SecurityReviews\Pages\EditSecurityReview;
 use App\Filament\Resources\SecurityReviews\Pages\ListSecurityReviews;
 use App\Filament\Resources\SecurityReviews\Schemas\SecurityReviewForm;
 use App\Filament\Resources\SecurityReviews\Tables\SecurityReviewsTable;
@@ -13,12 +11,14 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class SecurityReviewResource extends Resource
 {
     protected static ?string $model = SecurityReview::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon =
+        Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'status';
 
@@ -37,6 +37,21 @@ class SecurityReviewResource extends Resource
         return false;
     }
 
+    public static function canEdit(Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return false;
+    }
+
     public static function getRelations(): array
     {
         return [];
@@ -46,8 +61,6 @@ class SecurityReviewResource extends Resource
     {
         return [
             'index' => ListSecurityReviews::route('/'),
-            'create' => CreateSecurityReview::route('/create'),
-            'edit' => EditSecurityReview::route('/{record}/edit'),
         ];
     }
 }
