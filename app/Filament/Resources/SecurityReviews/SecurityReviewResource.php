@@ -15,16 +15,12 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
 class SecurityReviewResource extends Resource
-public static function canCreate(): bool
-{
-    return false;
-}
 {
     protected static ?string $model = SecurityReview::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $recordTitleAttribute = 'Title attribute: status';
+    protected static ?string $recordTitleAttribute = 'status';
 
     public static function form(Schema $schema): Schema
     {
@@ -36,11 +32,14 @@ public static function canCreate(): bool
         return SecurityReviewsTable::configure($table);
     }
 
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

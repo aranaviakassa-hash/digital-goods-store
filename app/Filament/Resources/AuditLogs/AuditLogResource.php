@@ -13,23 +13,15 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class AuditLogResource extends Resource
-public static function canEdit($record): bool
-{
-    return false;
-}
-
-public static function canDelete($record): bool
-{
-    return false;
-}
 {
     protected static ?string $model = AuditLog::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $recordTitleAttribute = 'Title attribute: event';
+    protected static ?string $recordTitleAttribute = 'event';
 
     public static function form(Schema $schema): Schema
     {
@@ -41,11 +33,24 @@ public static function canDelete($record): bool
         return AuditLogsTable::configure($table);
     }
 
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
+    }
+
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

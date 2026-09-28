@@ -13,23 +13,15 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class FulfillmentAttemptResource extends Resource
-public static function canEdit($record): bool
-{
-    return false;
-}
-
-public static function canDelete($record): bool
-{
-    return false;
-}
 {
     protected static ?string $model = FulfillmentAttempt::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $recordTitleAttribute = 'Title attribute: status';
+    protected static ?string $recordTitleAttribute = 'status';
 
     public static function form(Schema $schema): Schema
     {
@@ -41,11 +33,24 @@ public static function canDelete($record): bool
         return FulfillmentAttemptsTable::configure($table);
     }
 
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
+    }
+
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
