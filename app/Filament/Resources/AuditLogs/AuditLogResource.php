@@ -15,6 +15,15 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
 class AuditLogResource extends Resource
+public static function canEdit($record): bool
+{
+    return false;
+}
+
+public static function canDelete($record): bool
+{
+    return false;
+}
 {
     protected static ?string $model = AuditLog::class;
 
