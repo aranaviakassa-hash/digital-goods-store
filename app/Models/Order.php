@@ -66,4 +66,7 @@ class Order extends Model
     {
         return $this->belongsTo(User::class);
     }
+}public function fulfillmentAttempts()
+{
+    return $this->hasMany(FulfillmentAttempt::class);
 }

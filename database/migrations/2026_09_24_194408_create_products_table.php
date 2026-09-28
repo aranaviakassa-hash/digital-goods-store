@@ -29,4 +29,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('products');
     }
-};
+php artisan make:filament-resource Product
