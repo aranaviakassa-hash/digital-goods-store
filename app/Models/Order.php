@@ -62,11 +62,18 @@ class Order extends Model
         return $this->hasMany(PaymentAttempt::class);
     }
 
+    public function securityReview()
+    {
+        return $this->hasOne(SecurityReview::class);
+    }
+
+    public function fulfillmentAttempts()
+    {
+        return $this->hasMany(FulfillmentAttempt::class);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
     }
-}public function fulfillmentAttempts()
-{
-    return $this->hasMany(FulfillmentAttempt::class);
 }
