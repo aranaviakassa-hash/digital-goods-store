@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
 {
@@ -33,47 +35,33 @@ class Order extends Model
         ];
     }
 
-    protected static function booted(): void
+    public function user(): BelongsTo
     {
-        static::creating(function (Order $order) {
-            if (blank($order->order_number)) {
-                do {
-                    $orderNumber =
-                        'ORD-' .
-                        now()->format('Ymd') .
-                        '-' .
-                        strtoupper(Str::random(8));
-                } while (
-                    static::where('order_number', $orderNumber)->exists()
-                );
-
-                $order->order_number = $orderNumber;
-            }
-        });
+        return $this->belongsTo(User::class);
     }
 
-    public function items()
+    public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
 
-    public function paymentAttempts()
+    public function paymentAttempts(): HasMany
     {
         return $this->hasMany(PaymentAttempt::class);
     }
 
-    public function securityReview()
+    public function securityReview(): HasOne
     {
         return $this->hasOne(SecurityReview::class);
     }
 
-    public function fulfillmentAttempts()
+    public function fulfillmentAttempts(): HasMany
     {
         return $this->hasMany(FulfillmentAttempt::class);
     }
 
-    public function user()
+    public function evidence(): HasOne
     {
-        return $this->belongsTo(User::class);
+        return $this->hasOne(OrderEvidence::class);
     }
 }

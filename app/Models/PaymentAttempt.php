@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PaymentAttempt extends Model
 {
@@ -14,8 +15,8 @@ class PaymentAttempt extends Model
         'currency',
         'provider_payment_id',
         'idempotency_key',
-        'request_payload',
-        'response_payload',
+        'request',
+        'response',
         'paid_at',
         'failed_at',
     ];
@@ -24,14 +25,14 @@ class PaymentAttempt extends Model
     {
         return [
             'amount' => 'decimal:2',
-            'request_payload' => 'array',
-            'response_payload' => 'array',
+            'request' => 'array',
+            'response' => 'array',
             'paid_at' => 'datetime',
             'failed_at' => 'datetime',
         ];
     }
 
-    public function order()
+    public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
