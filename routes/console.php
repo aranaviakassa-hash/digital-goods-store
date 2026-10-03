@@ -3,6 +3,7 @@
 use App\Services\FulfillmentService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Symfony\Component\Console\Command\Command;
 
 Artisan::command(
     'fulfillment:reconcile-stale {--minutes=10 : Processing age in minutes before manual review}',
@@ -14,7 +15,7 @@ Artisan::command(
                 'The --minutes option must be at least 1.'
             );
 
-            return self::FAILURE;
+            return Command::FAILURE;
         }
 
         $reconciled =
@@ -25,7 +26,7 @@ Artisan::command(
             "Reconciled {$reconciled} stale fulfillment attempt(s)."
         );
 
-        return self::SUCCESS;
+        return Command::SUCCESS;
     }
 )->purpose(
     'Move stale fulfillment attempts to manual review without retrying the supplier.'
