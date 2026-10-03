@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 
 class OrderItem extends Model
 {
@@ -31,10 +32,22 @@ class OrderItem extends Model
     protected static function booted(): void
     {
         static::saving(function (OrderItem $orderItem) {
-            $orderItem->total_price = round(
-                (float) $orderItem->quantity * (float) $orderItem->unit_price,
-                2
+            $quantity = max(
+                0,
+                (int) $orderItem->quantity
             );
+
+            $unitPriceMinor = self::moneyToMinorUnits(
+                (string) $orderItem->unit_price
+            );
+
+            $totalMinor =
+                $unitPriceMinor * $quantity;
+
+            $orderItem->total_price =
+                self::minorUnitsToMoney(
+                    $totalMinor
+                );
         });
 
         static::saved(function (OrderItem $orderItem) {
@@ -70,5 +83,60 @@ class OrderItem extends Model
             'subtotal' => $total,
             'total' => $total,
         ]);
+    }
+
+    private static function moneyToMinorUnits(
+        string $amount
+    ): int {
+        $value = trim($amount);
+
+        if (
+            ! preg_match(
+                '/^\d+(?:\.\d{1,2})?$/',
+                $value
+            )
+        ) {
+            throw new InvalidArgumentException(
+                'Invalid monetary amount format.'
+            );
+        }
+
+        [$whole, $fraction] =
+            array_pad(
+                explode(
+                    '.',
+                    $value,
+                    2
+                ),
+                2,
+                ''
+            );
+
+        $fraction = str_pad(
+            $fraction,
+            2,
+            '0',
+            STR_PAD_RIGHT
+        );
+
+        return ((int) $whole * 100)
+            + (int) $fraction;
+    }
+
+    private static function minorUnitsToMoney(
+        int $minorUnits
+    ): string {
+        $whole = intdiv(
+            $minorUnits,
+            100
+        );
+
+        $fraction = $minorUnits % 100;
+
+        return sprintf(
+            '%d.%02d',
+            $whole,
+            $fraction
+        );
     }
 }
