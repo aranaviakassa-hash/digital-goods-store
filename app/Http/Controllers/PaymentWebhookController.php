@@ -74,6 +74,7 @@ class PaymentWebhookController extends Controller
             'amount' => [
                 'required',
                 'decimal:0,2',
+                'regex:/^\d{1,8}(?:\.\d{1,2})?$/',
             ],
 
             'currency' => [
@@ -277,10 +278,6 @@ class PaymentWebhookController extends Controller
                 $refundService,
                 $auditLogService
             ) {
-                /*
-                 * Canonical lock order:
-                 * Order first, then attempt.
-                 */
                 $order = Order::query()
                     ->whereKey(
                         $attempt->order_id
@@ -409,9 +406,6 @@ class PaymentWebhookController extends Controller
                     ];
                 }
 
-                /*
-                 * paid
-                 */
                 $orderService->markPaymentPaid(
                     $lockedAttempt,
                     $validated[
@@ -429,11 +423,6 @@ class PaymentWebhookController extends Controller
                 $lockedAttempt->refresh();
                 $order->refresh();
 
-                /*
-                 * Different paid attempt already exists:
-                 * refund this extra payment, but do NOT
-                 * cancel the valid order.
-                 */
                 $anotherPaidAttempt =
                     PaymentAttempt::query()
                         ->where(
@@ -479,10 +468,6 @@ class PaymentWebhookController extends Controller
                     ];
                 }
 
-                /*
-                 * A late payment must never resurrect
-                 * a cancelled/refund-pending order.
-                 */
                 if (
                     $order->status === 'cancelled'
                     ||
@@ -522,9 +507,6 @@ class PaymentWebhookController extends Controller
                     ];
                 }
 
-                /*
-                 * Normal first successful payment.
-                 */
                 $order->update([
                     'payment_status' =>
                         'paid',
@@ -600,25 +582,9 @@ class PaymentWebhookController extends Controller
             (string) $amount
         );
 
-        /*
-         * Never parse payment amounts through float.
-         *
-         * Accepted examples:
-         * 10
-         * 10.1
-         * 10.10
-         * 19.99
-         * 0.29
-         *
-         * Rejected examples:
-         * 10.100
-         * 10,10
-         * -1.00
-         * abc
-         */
         if (
             ! preg_match(
-                '/^\d+(?:\.\d{1,2})?$/',
+                '/^\d{1,8}(?:\.\d{1,2})?$/',
                 $value
             )
         ) {
