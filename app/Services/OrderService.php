@@ -36,24 +36,32 @@ class OrderService
                     }
                 }
 
+                /*
+                 * Product availability must be enforced here as well,
+                 * not only in the HTTP controller.
+                 */
                 $product = Product::query()
                     ->whereKey(
                         $data['product_id']
                     )
-                    ->where('is_active', true)
-                    ->where(
-                        'resale_verified',
-                        true
-                    )
-                    ->where(
-                        'bank_approved',
-                        true
-                    )
+                    ->sellable()
                     ->first();
 
                 if (! $product) {
                     throw new RuntimeException(
                         'Product is not available for sale.'
+                    );
+                }
+
+                /*
+                 * A sellable product must always have a real price.
+                 * Product::sellable() already enforces this, but this
+                 * defensive check prevents accidental zero/null orders
+                 * if the model rules are changed later.
+                 */
+                if ($product->price === null) {
+                    throw new RuntimeException(
+                        'Product price is not available.'
                     );
                 }
 
@@ -83,7 +91,9 @@ class OrderService
                     'total' => 0,
 
                     'currency' =>
-                        $product->currency,
+                        strtoupper(
+                            $product->currency
+                        ),
 
                     'customer_email' =>
                         $data['customer_email'],
@@ -110,7 +120,9 @@ class OrderService
                         $product->price,
 
                     'currency' =>
-                        $product->currency,
+                        strtoupper(
+                            $product->currency
+                        ),
                 ]);
 
                 return $order->fresh([
@@ -148,32 +160,148 @@ class OrderService
         ?string $idempotencyKey = null,
         array $requestPayload = []
     ): PaymentAttempt {
-        return DB::transaction(function () use (
-            $order,
-            $provider,
-            $idempotencyKey,
-            $requestPayload
-        ) {
-            $lockedOrder = Order::query()
-                ->whereKey($order->id)
-                ->lockForUpdate()
-                ->firstOrFail();
+        $provider = trim($provider);
 
-            if (
-                $lockedOrder->status !== 'pending'
-                || $lockedOrder->payment_status !== 'unpaid'
+        if ($provider === '') {
+            throw new RuntimeException(
+                'Payment provider is required.'
+            );
+        }
+
+        $idempotencyKey ??=
+            'PAY-' .
+            strtoupper(
+                Str::uuid()->toString()
+            );
+
+        /*
+         * The database currently protects idempotency_key with a
+         * global unique constraint. If two concurrent requests race,
+         * the losing transaction may receive a unique violation.
+         * Handle that safely outside the transaction.
+         */
+        try {
+            return DB::transaction(function () use (
+                $order,
+                $provider,
+                $idempotencyKey,
+                $requestPayload
             ) {
-                throw new RuntimeException(
-                    'Order is not eligible for a new payment attempt.'
-                );
-            }
+                $lockedOrder = Order::query()
+                    ->whereKey($order->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            $idempotencyKey ??=
-                'PAY-' .
-                strtoupper(
-                    Str::uuid()->toString()
-                );
+                /*
+                 * Resolve an existing idempotent request BEFORE
+                 * checking retry eligibility.
+                 *
+                 * This means replaying the same request after a
+                 * failed attempt returns the same attempt instead
+                 * of creating another one.
+                 */
+                $existingAttempt =
+                    PaymentAttempt::query()
+                        ->where(
+                            'idempotency_key',
+                            $idempotencyKey
+                        )
+                        ->first();
 
+                if ($existingAttempt) {
+                    if (
+                        (int) $existingAttempt->order_id
+                            !== (int) $lockedOrder->id
+                        || $existingAttempt->provider
+                            !== $provider
+                    ) {
+                        throw new RuntimeException(
+                            'Payment idempotency key is already in use for another payment context.'
+                        );
+                    }
+
+                    return $existingAttempt;
+                }
+
+                /*
+                 * A failed payment may be retried with a NEW
+                 * idempotency key while the order itself remains
+                 * pending.
+                 *
+                 * Paid, cancelled, completed, etc. orders cannot
+                 * start another normal payment attempt.
+                 */
+                if (
+                    $lockedOrder->status !== 'pending'
+                    || ! in_array(
+                        $lockedOrder->payment_status,
+                        [
+                            'unpaid',
+                            'failed',
+                        ],
+                        true
+                    )
+                ) {
+                    throw new RuntimeException(
+                        'Order is not eligible for a new payment attempt.'
+                    );
+                }
+
+                $merchantReference =
+                    'MR-' .
+                    strtoupper(
+                        Str::uuid()->toString()
+                    );
+
+                $attempt =
+                    PaymentAttempt::create([
+                        'order_id' =>
+                            $lockedOrder->id,
+
+                        'provider' =>
+                            $provider,
+
+                        'status' =>
+                            'initiated',
+
+                        'amount' =>
+                            $lockedOrder->total,
+
+                        'currency' =>
+                            strtoupper(
+                                $lockedOrder->currency
+                            ),
+
+                        'idempotency_key' =>
+                            $idempotencyKey,
+
+                        'merchant_reference' =>
+                            $merchantReference,
+
+                        'request_payload' =>
+                            $requestPayload,
+                    ]);
+
+                /*
+                 * A new retry attempt means the order is waiting
+                 * for payment again.
+                 */
+                $lockedOrder->update([
+                    'payment_provider' =>
+                        $provider,
+
+                    'payment_status' =>
+                        'unpaid',
+                ]);
+
+                return $attempt;
+            });
+        } catch (QueryException $exception) {
+            /*
+             * If a concurrent request created this idempotency key
+             * first, return it only when it belongs to the exact
+             * same order/provider context.
+             */
             $existingAttempt =
                 PaymentAttempt::query()
                     ->where(
@@ -183,54 +311,23 @@ class OrderService
                     ->first();
 
             if ($existingAttempt) {
+                if (
+                    (int) $existingAttempt->order_id
+                        !== (int) $order->id
+                    || $existingAttempt->provider
+                        !== $provider
+                ) {
+                    throw new RuntimeException(
+                        'Payment idempotency key is already in use for another payment context.',
+                        previous: $exception
+                    );
+                }
+
                 return $existingAttempt;
             }
 
-            $merchantReference =
-                'MR-' .
-                strtoupper(
-                    Str::uuid()->toString()
-                );
-
-            $attempt =
-                PaymentAttempt::create([
-                    'order_id' =>
-                        $lockedOrder->id,
-
-                    'provider' =>
-                        $provider,
-
-                    'status' =>
-                        'initiated',
-
-                    'amount' =>
-                        $lockedOrder->total,
-
-                    'currency' =>
-                        strtoupper(
-                            $lockedOrder->currency
-                        ),
-
-                    'idempotency_key' =>
-                        $idempotencyKey,
-
-                    'merchant_reference' =>
-                        $merchantReference,
-
-                    'request_payload' =>
-                        $requestPayload,
-                ]);
-
-            $lockedOrder->update([
-                'payment_provider' =>
-                    $provider,
-
-                'payment_status' =>
-                    'unpaid',
-            ]);
-
-            return $attempt;
-        });
+            throw $exception;
+        }
     }
 
     public function markPaymentPaid(
@@ -293,6 +390,10 @@ class OrderService
             $attempt,
             $responsePayload
         ) {
+            /*
+             * Canonical lock order:
+             * Order first, then attempt.
+             */
             $order = Order::query()
                 ->whereKey($attempt->order_id)
                 ->lockForUpdate()
@@ -325,6 +426,11 @@ class OrderService
                 'failed_at' => now(),
             ]);
 
+            /*
+             * The order remains pending but records that its most
+             * recent payment attempt failed. createPaymentAttempt()
+             * explicitly permits a retry from this state.
+             */
             if ($order->payment_status !== 'paid') {
                 $order->update([
                     'payment_status' => 'failed',

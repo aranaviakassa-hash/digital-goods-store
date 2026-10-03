@@ -9,14 +9,19 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>{{ $title ?? 'GameHub Digital' }}</title>
+    <title>
+        {{ $title ?? config('company.brand_full_name') }}
+    </title>
 
     <meta
         name="description"
-        content="Secure digital gaming products and top-ups with transparent pricing and protected order processing."
+        content="NEXORA — rəqəmsal oyun məhsulları və top-up xidmətləri üçün təhlükəsiz onlayn mağaza."
     >
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite([
+        'resources/css/app.css',
+        'resources/js/app.js'
+    ])
 </head>
 
 <body class="min-h-screen bg-slate-950 text-white antialiased">
@@ -30,12 +35,12 @@
             class="flex items-center gap-3"
         >
             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 font-black shadow-lg shadow-violet-600/20">
-                G
+                N
             </div>
 
             <div>
                 <div class="text-lg font-bold tracking-tight">
-                    GameHub
+                    {{ config('company.brand_name') }}
                 </div>
 
                 <div class="text-[10px] uppercase tracking-[0.22em] text-slate-500">
@@ -230,12 +235,12 @@
             <div class="flex items-center gap-3">
 
                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 font-black">
-                    G
+                    N
                 </div>
 
                 <div>
                     <div class="font-bold">
-                        GameHub Digital Store
+                        {{ config('company.brand_full_name') }}
                     </div>
 
                     <div class="text-xs text-slate-500">
@@ -246,10 +251,32 @@
             </div>
 
             <p class="mt-5 max-w-md text-sm leading-6 text-slate-400">
-                Digital gaming products and top-ups with transparent
-                pricing, secure payment verification and protected
-                order processing.
+                Rəqəmsal oyun məhsulları və top-up xidmətləri.
+                Şəffaf qiymətlər, qorunan sifariş prosesi və
+                təhlükəsiz ödəniş yoxlaması.
             </p>
+
+            <div class="mt-5 space-y-1 text-xs leading-5 text-slate-500">
+
+                <div>
+                    {{ config('company.legal_short_name') }}
+                </div>
+
+                <div>
+                    VÖEN:
+                    {{ config('company.tax_id') }}
+                </div>
+
+                <div>
+                    {{ config('company.legal_address') }}
+                </div>
+
+                <div>
+                    Tel:
+                    {{ config('company.phone_display') }}
+                </div>
+
+            </div>
 
         </div>
 
@@ -332,7 +359,8 @@
         <div class="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between lg:px-8">
 
             <span>
-                © {{ date('Y') }} GameHub Digital Store.
+                © {{ date('Y') }}
+                {{ config('company.brand_full_name') }}.
             </span>
 
             <span>

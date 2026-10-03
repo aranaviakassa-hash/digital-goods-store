@@ -12,12 +12,26 @@ class MaskSensitiveInput
         Request $request,
         Closure $next
     ): Response {
-        $request->request->remove('card_number');
-        $request->request->remove('pan');
-        $request->request->remove('cvv');
-        $request->request->remove('cvc');
-        $request->request->remove('otp');
-        $request->request->remove('password_confirmation');
+        /*
+         * This application must never collect raw card data.
+         *
+         * If these fields somehow reach the application,
+         * discard them before application code can use them.
+         *
+         * Do NOT remove password/password_confirmation:
+         * Laravel validation and password reset flows require them.
+         */
+        foreach ([
+            'card_number',
+            'pan',
+            'cvv',
+            'cvc',
+            'card_cvv',
+            'card_cvc',
+            'otp',
+        ] as $field) {
+            $request->request->remove($field);
+        }
 
         return $next($request);
     }

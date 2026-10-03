@@ -3,43 +3,66 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use Illuminate\Contracts\View\View;
 
 class StoreController extends Controller
 {
-    public function home()
+    public function home(): View
     {
-        $products = Product::query()
-            ->where('is_active', true)
-            ->where('resale_verified', true)
-            ->where('bank_approved', true)
-            ->latest()
-            ->take(6)
-            ->get();
+        $products =
+            Product::query()
+                ->visibleInCatalog()
+                ->orderByRaw("
+                    CASE
+                        WHEN LOWER(name) LIKE '%pubg%' THEN 1
+                        WHEN LOWER(name) LIKE '%free fire%' THEN 2
+                        WHEN LOWER(name) LIKE '%mobile legends%' THEN 3
+                        ELSE 100
+                    END
+                ")
+                ->orderBy('name')
+                ->take(6)
+                ->get();
 
-        return view('store.home', compact('products'));
+        return view(
+            'store.home',
+            compact('products')
+        );
     }
 
-    public function products()
+    public function products(): View
     {
-        $products = Product::query()
-            ->where('is_active', true)
-            ->where('resale_verified', true)
-            ->where('bank_approved', true)
-            ->latest()
-            ->paginate(12);
+        $products =
+            Product::query()
+                ->visibleInCatalog()
+                ->orderByRaw("
+                    CASE
+                        WHEN LOWER(name) LIKE '%pubg%' THEN 1
+                        WHEN LOWER(name) LIKE '%free fire%' THEN 2
+                        WHEN LOWER(name) LIKE '%mobile legends%' THEN 3
+                        ELSE 100
+                    END
+                ")
+                ->orderBy('name')
+                ->paginate(12);
 
-        return view('store.products', compact('products'));
+        return view(
+            'store.products',
+            compact('products')
+        );
     }
 
-    public function product(Product $product)
-    {
+    public function product(
+        Product $product
+    ): View {
         abort_unless(
-            $product->is_active
-            && $product->resale_verified
-            && $product->bank_approved,
+            $product->catalog_visible,
             404
         );
 
-        return view('store.product', compact('product'));
+        return view(
+            'store.product',
+            compact('product')
+        );
     }
 }

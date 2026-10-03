@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\Products\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -16,6 +14,7 @@ class ProductsTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label('Product')
                     ->searchable()
                     ->sortable(),
 
@@ -24,48 +23,72 @@ class ProductsTable
                     ->sortable(),
 
                 TextColumn::make('supplier')
+                    ->placeholder('Not assigned')
                     ->searchable(),
 
                 TextColumn::make('supplier_product_code')
                     ->label('Supplier Code')
+                    ->placeholder('—')
                     ->searchable(),
 
                 TextColumn::make('price')
-                    ->formatStateUsing(fn ($state, $record) => number_format((float) $state, 2) . ' ' . $record->currency)
+                    ->label('Price')
+                    ->formatStateUsing(
+                        function ($state, $record): string {
+                            if ($state === null) {
+                                return 'Not set';
+                            }
+
+                            return number_format(
+                                (float) $state,
+                                2
+                            )
+                            . ' '
+                            . $record->currency;
+                        }
+                    )
                     ->sortable(),
+
+                IconColumn::make('catalog_visible')
+                    ->label('Catalog')
+                    ->boolean(),
 
                 IconColumn::make('is_active')
                     ->label('Active')
                     ->boolean(),
 
                 IconColumn::make('resale_verified')
-                    ->label('Resale Verified')
+                    ->label('Resale')
                     ->boolean(),
 
                 IconColumn::make('bank_approved')
-                    ->label('Bank Approved')
+                    ->label('Bank')
                     ->boolean(),
 
                 TextColumn::make('created_at')
+                    ->label('Created')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(
+                        isToggledHiddenByDefault: true
+                    ),
 
                 TextColumn::make('updated_at')
+                    ->label('Updated')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(
+                        isToggledHiddenByDefault: true
+                    ),
             ])
-            ->filters([
-                //
-            ])
+
+            ->defaultSort(
+                'updated_at',
+                'desc'
+            )
+
             ->recordActions([
                 EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
             ]);
     }
 }

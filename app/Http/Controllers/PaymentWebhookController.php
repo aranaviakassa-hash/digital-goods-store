@@ -12,6 +12,7 @@ use App\Services\SecurityReviewService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 class PaymentWebhookController extends Controller
 {
@@ -451,14 +452,13 @@ class PaymentWebhookController extends Controller
                         ->exists();
 
                 if ($anotherPaidAttempt) {
-                    $refund =
-                        $refundService
-                            ->requireRefund(
-                                $order,
-                                $lockedAttempt,
-                                'Duplicate payment captured for the same order.',
-                                false
-                            );
+                    $refundService
+                        ->requireRefund(
+                            $order,
+                            $lockedAttempt,
+                            'Duplicate payment captured for the same order.',
+                            false
+                        );
 
                     $event->update([
                         'processing_status' =>
@@ -495,14 +495,13 @@ class PaymentWebhookController extends Controller
                         true
                     )
                 ) {
-                    $refund =
-                        $refundService
-                            ->requireRefund(
-                                $order,
-                                $lockedAttempt,
-                                'Payment received after order became non-payable.',
-                                true
-                            );
+                    $refundService
+                        ->requireRefund(
+                            $order,
+                            $lockedAttempt,
+                            'Payment received after order became non-payable.',
+                            true
+                        );
 
                     $event->update([
                         'processing_status' =>
@@ -597,17 +596,54 @@ class PaymentWebhookController extends Controller
     private function minorUnits(
         mixed $amount
     ): int {
-        $normalized = number_format(
-            (float) $amount,
-            2,
-            '.',
-            ''
+        $value = trim(
+            (string) $amount
         );
 
+        /*
+         * Never parse payment amounts through float.
+         *
+         * Accepted examples:
+         * 10
+         * 10.1
+         * 10.10
+         * 19.99
+         * 0.29
+         *
+         * Rejected examples:
+         * 10.100
+         * 10,10
+         * -1.00
+         * abc
+         */
+        if (
+            ! preg_match(
+                '/^\d+(?:\.\d{1,2})?$/',
+                $value
+            )
+        ) {
+            throw new InvalidArgumentException(
+                'Invalid monetary amount format.'
+            );
+        }
+
         [$whole, $fraction] =
-            explode(
-                '.',
-                $normalized
+            array_pad(
+                explode(
+                    '.',
+                    $value,
+                    2
+                ),
+                2,
+                ''
+            );
+
+        $fraction =
+            str_pad(
+                $fraction,
+                2,
+                '0',
+                STR_PAD_RIGHT
             );
 
         return ((int) $whole * 100)

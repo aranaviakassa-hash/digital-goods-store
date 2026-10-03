@@ -27,6 +27,11 @@ class CheckoutController extends Controller
         Product $product,
         OrderService $orderService
     ): RedirectResponse {
+        /*
+         * Never trust the product state that was shown to the
+         * customer earlier. Re-check sellability server-side
+         * immediately before creating the order.
+         */
         $this->ensureProductIsSellable($product);
 
         $validated = $request->validate([
@@ -95,25 +100,53 @@ class CheckoutController extends Controller
             $product,
             $orderService
         ) {
+            /*
+             * A product may have changed state between initial
+             * validation and this transaction. Reload the current
+             * database state before order creation.
+             */
+            $product->refresh();
+
+            $this->ensureProductIsSellable(
+                $product
+            );
+
             $order = $orderService->createOrder([
                 'product_id' => $product->id,
                 'quantity' => $validated['quantity'],
-                'customer_email' => $validated['customer_email'],
-                'customer_name' => $validated['customer_name'] ?? null,
-                'idempotency_key' => $validated['idempotency_key'],
+                'customer_email' =>
+                    strtolower(
+                        trim(
+                            $validated['customer_email']
+                        )
+                    ),
+                'customer_name' =>
+                    filled(
+                        $validated['customer_name']
+                        ?? null
+                    )
+                        ? trim(
+                            $validated['customer_name']
+                        )
+                        : null,
+                'idempotency_key' =>
+                    $validated['idempotency_key'],
             ]);
 
             if (
                 auth()->check()
                 && ! $order->user_id
             ) {
-                $order->user_id = auth()->id();
+                $order->user_id =
+                    auth()->id();
+
                 $order->save();
             }
 
             $order->load('items');
 
-            $orderItem = $order->items->first();
+            $orderItem =
+                $order->items->first();
 
             abort_unless(
                 $orderItem !== null,
@@ -122,23 +155,41 @@ class CheckoutController extends Controller
             );
 
             $orderItem->delivery_data = [
-                'account_identifier' => trim(
-                    $validated['account_identifier']
-                ),
+                'account_identifier' =>
+                    trim(
+                        $validated[
+                            'account_identifier'
+                        ]
+                    ),
 
-                'secondary_identifier' => filled(
-                    $validated['secondary_identifier'] ?? null
-                )
-                    ? trim($validated['secondary_identifier'])
-                    : null,
+                'secondary_identifier' =>
+                    filled(
+                        $validated[
+                            'secondary_identifier'
+                        ] ?? null
+                    )
+                        ? trim(
+                            $validated[
+                                'secondary_identifier'
+                            ]
+                        )
+                        : null,
 
-                'server_region' => filled(
-                    $validated['server_region'] ?? null
-                )
-                    ? trim($validated['server_region'])
-                    : null,
+                'server_region' =>
+                    filled(
+                        $validated[
+                            'server_region'
+                        ] ?? null
+                    )
+                        ? trim(
+                            $validated[
+                                'server_region'
+                            ]
+                        )
+                        : null,
 
-                'customer_confirmed' => true,
+                'customer_confirmed' =>
+                    true,
             ];
 
             $orderItem->save();
@@ -147,30 +198,44 @@ class CheckoutController extends Controller
 
             OrderEvidence::updateOrCreate(
                 [
-                    'order_id' => $order->id,
+                    'order_id' =>
+                        $order->id,
                 ],
                 [
                     'terms_version' =>
-                        config('policies.terms.version'),
+                        config(
+                            'policies.terms.version'
+                        ),
 
                     'refund_policy_version' =>
-                        config('policies.refund.version'),
+                        config(
+                            'policies.refund.version'
+                        ),
 
                     'delivery_policy_version' =>
-                        config('policies.delivery.version'),
+                        config(
+                            'policies.delivery.version'
+                        ),
 
                     'privacy_policy_version' =>
-                        config('policies.privacy.version'),
+                        config(
+                            'policies.privacy.version'
+                        ),
 
-                    'terms_accepted_at' => $now,
+                    'terms_accepted_at' =>
+                        $now,
 
-                    'refund_policy_accepted_at' => $now,
+                    'refund_policy_accepted_at' =>
+                        $now,
 
-                    'delivery_policy_accepted_at' => $now,
+                    'delivery_policy_accepted_at' =>
+                        $now,
 
-                    'customer_data_confirmed_at' => $now,
+                    'customer_data_confirmed_at' =>
+                        $now,
 
-                    'ip_address' => $request->ip(),
+                    'ip_address' =>
+                        $request->ip(),
 
                     'user_agent' =>
                         $request->userAgent(),
@@ -189,7 +254,10 @@ class CheckoutController extends Controller
         );
 
         return redirect()
-            ->route('orders.show', $order);
+            ->route(
+                'orders.show',
+                $order
+            );
     }
 
     public function success(
@@ -198,13 +266,16 @@ class CheckoutController extends Controller
     ): View {
         $ownsOrder =
             auth()->check()
-            && (int) $order->user_id === (int) auth()->id();
+            && (int) $order->user_id
+                === (int) auth()->id();
 
         $guestAccess =
-            (bool) $request->session()->get(
-                "allowed_order_ids.{$order->id}",
-                false
-            );
+            (bool) $request
+                ->session()
+                ->get(
+                    "allowed_order_ids.{$order->id}",
+                    false
+                );
 
         abort_unless(
             $ownsOrder || $guestAccess,
@@ -216,47 +287,62 @@ class CheckoutController extends Controller
             'evidence',
         ]);
 
-        return view('store.order', [
-            'order' => $order,
-        ]);
+        return view(
+            'store.order',
+            [
+                'order' => $order,
+            ]
+        );
     }
 
     public function trackingForm(): View
     {
-        return view('store.track');
+        return view(
+            'store.track'
+        );
     }
 
     public function tracking(
         Request $request
     ): RedirectResponse {
-        $validated = $request->validate([
-            'order_number' => [
-                'required',
-                'string',
-                'max:100',
-            ],
+        $validated =
+            $request->validate([
+                'order_number' => [
+                    'required',
+                    'string',
+                    'max:100',
+                ],
 
-            'customer_email' => [
-                'required',
-                'email',
-                'max:255',
-            ],
-        ]);
+                'customer_email' => [
+                    'required',
+                    'email',
+                    'max:255',
+                ],
+            ]);
 
-        $order = Order::query()
-            ->where(
-                'order_number',
-                $validated['order_number']
-            )
-            ->whereRaw(
-                'LOWER(customer_email) = ?',
-                [
-                    strtolower(
-                        trim($validated['customer_email'])
-                    ),
-                ]
-            )
-            ->first();
+        $order =
+            Order::query()
+                ->where(
+                    'order_number',
+                    trim(
+                        $validated[
+                            'order_number'
+                        ]
+                    )
+                )
+                ->whereRaw(
+                    'LOWER(customer_email) = ?',
+                    [
+                        strtolower(
+                            trim(
+                                $validated[
+                                    'customer_email'
+                                ]
+                            )
+                        ),
+                    ]
+                )
+                ->first();
 
         if (! $order) {
             return back()
@@ -273,16 +359,17 @@ class CheckoutController extends Controller
         );
 
         return redirect()
-            ->route('orders.show', $order);
+            ->route(
+                'orders.show',
+                $order
+            );
     }
 
     private function ensureProductIsSellable(
         Product $product
     ): void {
         abort_unless(
-            $product->is_active
-            && $product->resale_verified
-            && $product->bank_approved,
+            $product->isSellable(),
             404
         );
     }
