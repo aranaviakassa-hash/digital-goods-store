@@ -118,10 +118,10 @@ class PaymentWebhookController extends Controller
             }
 
             if (! $attempt->provider_payment_id) {
-                $attempt->provider_payment_id =
-                    $validated['provider_payment_id'];
-
-                $attempt->save();
+                $attempt->update([
+                    'provider_payment_id' =>
+                        $validated['provider_payment_id'],
+                ]);
             }
 
             if ($validated['status'] === 'paid') {
@@ -136,8 +136,12 @@ class PaymentWebhookController extends Controller
                 }
 
                 $orderService->markPaymentPaid(
-                    $order,
-                    $attempt
+                    $attempt,
+                    $validated['provider_payment_id'],
+                    [
+                        'source' => 'local_webhook',
+                        'status' => 'paid',
+                    ]
                 );
 
                 $auditLogService->log(
@@ -181,8 +185,11 @@ class PaymentWebhookController extends Controller
             }
 
             $orderService->markPaymentFailed(
-                $order,
-                $attempt
+                $attempt,
+                [
+                    'source' => 'local_webhook',
+                    'status' => 'failed',
+                ]
             );
 
             $auditLogService->log(

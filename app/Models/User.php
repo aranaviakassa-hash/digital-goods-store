@@ -16,7 +16,7 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable implements
     MustVerifyEmail,
-    FilamentUser,0.0.0.0:5432->5432/tcp
+    FilamentUser,
     HasAppAuthentication,
     HasAppAuthenticationRecovery
 {
@@ -34,6 +34,8 @@ class User extends Authenticatable implements
     protected $hidden = [
         'password',
         'remember_token',
+        'app_authentication_secret',
+        'app_authentication_recovery_codes',
     ];
 
     protected function casts(): array
@@ -42,6 +44,7 @@ class User extends Authenticatable implements
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'app_authentication_confirmed_at' => 'datetime',
         ];
     }
 

@@ -64,4 +64,9 @@ class Order extends Model
     {
         return $this->hasOne(OrderEvidence::class);
     }
+
+    public function refund(): HasOne
+    {
+        return $this->hasOne(Refund::class);
+    }
 }

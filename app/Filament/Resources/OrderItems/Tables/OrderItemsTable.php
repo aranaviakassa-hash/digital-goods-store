@@ -2,9 +2,6 @@
 
 namespace App\Filament\Resources\OrderItems\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -32,12 +29,28 @@ class OrderItemsTable
 
                 TextColumn::make('unit_price')
                     ->label('Unit Price')
-                    ->formatStateUsing(fn ($state, $record) => number_format((float) $state, 2) . ' ' . $record->currency)
+                    ->formatStateUsing(
+                        fn ($state, $record) =>
+                            number_format(
+                                (float) $state,
+                                2
+                            ) .
+                            ' ' .
+                            $record->currency
+                    )
                     ->sortable(),
 
                 TextColumn::make('total_price')
                     ->label('Total')
-                    ->formatStateUsing(fn ($state, $record) => number_format((float) $state, 2) . ' ' . $record->currency)
+                    ->formatStateUsing(
+                        fn ($state, $record) =>
+                            number_format(
+                                (float) $state,
+                                2
+                            ) .
+                            ' ' .
+                            $record->currency
+                    )
                     ->sortable(),
 
                 TextColumn::make('created_at')
@@ -45,16 +58,7 @@ class OrderItemsTable
                     ->dateTime()
                     ->sortable(),
             ])
-            ->filters([
-                //
-            ])
-            ->recordActions([
-                EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->recordActions([])
+            ->toolbarActions([]);
     }
 }

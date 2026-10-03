@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PaymentAttempt;
 use App\Models\Product;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -14,7 +15,77 @@ class OrderService
 {
     public function createOrder(array $data): Order
     {
-        return DB::transaction(function () use ($data) {
+        try {
+            return DB::transaction(function () use ($data) {
+                $idempotencyKey = $data['idempotency_key'] ?? null;
+
+                if ($idempotencyKey) {
+                    $existingOrder = Order::query()
+                        ->where('idempotency_key', $idempotencyKey)
+                        ->first();
+
+                    if ($existingOrder) {
+                        return $existingOrder->load([
+                            'items',
+                            'paymentAttempts',
+                        ]);
+                    }
+                }
+
+                $product = Product::query()
+                    ->whereKey($data['product_id'])
+                    ->where('is_active', true)
+                    ->where('resale_verified', true)
+                    ->where('bank_approved', true)
+                    ->first();
+
+                if (! $product) {
+                    throw new RuntimeException(
+                        'Product is not available for sale.'
+                    );
+                }
+
+                $quantity = max(
+                    (int) ($data['quantity'] ?? 1),
+                    1
+                );
+
+                $order = Order::create([
+                    'order_number' => $this->generateOrderNumber(),
+                    'idempotency_key' => $idempotencyKey,
+                    'user_id' => $data['user_id'] ?? null,
+
+                    'status' => 'pending',
+                    'payment_status' => 'unpaid',
+                    'fulfillment_status' => 'pending',
+
+                    'subtotal' => 0,
+                    'total' => 0,
+
+                    'currency' => $product->currency,
+
+                    'customer_email' => $data['customer_email'],
+                    'customer_name' => $data['customer_name'] ?? null,
+                ]);
+
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $product->id,
+
+                    'product_name' => $product->name,
+                    'product_code' => $product->supplier_product_code,
+
+                    'quantity' => $quantity,
+                    'unit_price' => $product->price,
+                    'currency' => $product->currency,
+                ]);
+
+                return $order->fresh([
+                    'items',
+                    'paymentAttempts',
+                ]);
+            });
+        } catch (QueryException $exception) {
             $idempotencyKey = $data['idempotency_key'] ?? null;
 
             if ($idempotencyKey) {
@@ -30,58 +101,8 @@ class OrderService
                 }
             }
 
-            $product = Product::query()
-                ->whereKey($data['product_id'])
-                ->where('is_active', true)
-                ->where('resale_verified', true)
-                ->where('bank_approved', true)
-                ->first();
-
-            if (! $product) {
-                throw new RuntimeException(
-                    'Product is not available for sale.'
-                );
-            }
-
-            $quantity = max(
-                (int) ($data['quantity'] ?? 1),
-                1
-            );
-
-            $order = Order::create([
-                'idempotency_key' => $idempotencyKey,
-                'user_id' => $data['user_id'] ?? null,
-
-                'status' => 'pending',
-                'payment_status' => 'unpaid',
-                'fulfillment_status' => 'pending',
-
-                'subtotal' => 0,
-                'total' => 0,
-
-                'currency' => $product->currency,
-
-                'customer_email' => $data['customer_email'],
-                'customer_name' => $data['customer_name'] ?? null,
-            ]);
-
-            OrderItem::create([
-                'order_id' => $order->id,
-                'product_id' => $product->id,
-
-                'product_name' => $product->name,
-                'product_code' => $product->supplier_product_code,
-
-                'quantity' => $quantity,
-                'unit_price' => $product->price,
-                'currency' => $product->currency,
-            ]);
-
-            return $order->fresh([
-                'items',
-                'paymentAttempts',
-            ]);
-        });
+            throw $exception;
+        }
     }
 
     public function createPaymentAttempt(
@@ -138,31 +159,42 @@ class OrderService
             $providerPaymentId,
             $responsePayload
         ) {
-            if ($attempt->status === 'paid') {
-                return $attempt;
+            $lockedAttempt = PaymentAttempt::query()
+                ->whereKey($attempt->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($lockedAttempt->status === 'paid') {
+                return $lockedAttempt;
             }
 
-            $attempt->update([
+            $order = Order::query()
+                ->whereKey($lockedAttempt->order_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($order->payment_status === 'paid') {
+                return $lockedAttempt;
+            }
+
+            $lockedAttempt->update([
                 'status' => 'paid',
-                'provider_payment_id' => $providerPaymentId,
+                'provider_payment_id' => $providerPaymentId
+                    ?? $lockedAttempt->provider_payment_id,
                 'response_payload' => $responsePayload,
                 'paid_at' => now(),
                 'failed_at' => null,
             ]);
 
-            $attempt->order->update([
+            $order->update([
                 'payment_status' => 'paid',
                 'status' => 'processing',
-
-                // Payment-dən sonra məhsulu dərhal vermirik.
-                // Əvvəl fraud/security yoxlamasına gedir.
                 'fulfillment_status' => 'security_review',
-
-                'payment_reference' =>
-                    $providerPaymentId,
+                'payment_reference' => $providerPaymentId
+                    ?? $lockedAttempt->provider_payment_id,
             ]);
 
-            return $attempt->fresh();
+            return $lockedAttempt->fresh();
         });
     }
 
@@ -174,17 +206,55 @@ class OrderService
             $attempt,
             $responsePayload
         ) {
-            $attempt->update([
+            $lockedAttempt = PaymentAttempt::query()
+                ->whereKey($attempt->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $order = Order::query()
+                ->whereKey($lockedAttempt->order_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (
+                $lockedAttempt->status === 'paid'
+                || $order->payment_status === 'paid'
+            ) {
+                return $lockedAttempt;
+            }
+
+            if ($lockedAttempt->status === 'failed') {
+                return $lockedAttempt;
+            }
+
+            $lockedAttempt->update([
                 'status' => 'failed',
                 'response_payload' => $responsePayload,
                 'failed_at' => now(),
             ]);
 
-            $attempt->order->update([
+            $order->update([
                 'payment_status' => 'failed',
             ]);
 
-            return $attempt->fresh();
+            return $lockedAttempt->fresh();
         });
+    }
+
+    private function generateOrderNumber(): string
+    {
+        do {
+            $orderNumber =
+                'ORD-' .
+                now()->format('Ymd') .
+                '-' .
+                strtoupper(Str::random(8));
+        } while (
+            Order::query()
+                ->where('order_number', $orderNumber)
+                ->exists()
+        );
+
+        return $orderNumber;
     }
 }

@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FulfillmentAttempt extends Model
 {
     protected $fillable = [
         'order_id',
+        'order_item_id',
         'supplier',
         'status',
         'supplier_reference',
@@ -28,8 +30,13 @@ class FulfillmentAttempt extends Model
         ];
     }
 
-    public function order()
+    public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function orderItem(): BelongsTo
+    {
+        return $this->belongsTo(OrderItem::class);
     }
 }

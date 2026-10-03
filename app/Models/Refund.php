@@ -5,19 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class PaymentAttempt extends Model
+class Refund extends Model
 {
     protected $fillable = [
         'order_id',
+        'payment_attempt_id',
         'provider',
         'status',
         'amount',
         'currency',
-        'provider_payment_id',
-        'idempotency_key',
+        'provider_refund_id',
+        'reason',
         'request_payload',
         'response_payload',
-        'paid_at',
+        'requested_at',
+        'refunded_at',
         'failed_at',
     ];
 
@@ -27,7 +29,8 @@ class PaymentAttempt extends Model
             'amount' => 'decimal:2',
             'request_payload' => 'array',
             'response_payload' => 'array',
-            'paid_at' => 'datetime',
+            'requested_at' => 'datetime',
+            'refunded_at' => 'datetime',
             'failed_at' => 'datetime',
         ];
     }
@@ -35,5 +38,10 @@ class PaymentAttempt extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function paymentAttempt(): BelongsTo
+    {
+        return $this->belongsTo(PaymentAttempt::class);
     }
 }

@@ -16,7 +16,8 @@ class SecurityReviewService
     private const FAILED_PAYMENT_WINDOW_HOURS = 24;
 
     public function __construct(
-        protected AuditLogService $auditLogService
+        protected AuditLogService $auditLogService,
+        protected RefundService $refundService
     ) {
     }
 
@@ -43,7 +44,8 @@ class SecurityReviewService
                 return $review;
             }
 
-            [$riskScore, $riskFlags] = $this->calculateRisk($lockedOrder);
+            [$riskScore, $riskFlags] =
+                $this->calculateRisk($lockedOrder);
 
             if (! $review) {
                 $review = SecurityReview::create([
@@ -69,7 +71,11 @@ class SecurityReviewService
                 [
                     'security_review_id' => $review->id,
                     'risk_score' => $riskScore,
-                    'risk_flags' => array_column($riskFlags, 'code'),
+                    'risk_flags' =>
+                        array_column(
+                            $riskFlags,
+                            'code'
+                        ),
                 ]
             );
 
@@ -81,7 +87,10 @@ class SecurityReviewService
         SecurityReview $review,
         ?string $notes = null
     ): SecurityReview {
-        return DB::transaction(function () use ($review, $notes) {
+        return DB::transaction(function () use (
+            $review,
+            $notes
+        ) {
             $lockedReview = SecurityReview::query()
                 ->whereKey($review->id)
                 ->lockForUpdate()
@@ -109,8 +118,12 @@ class SecurityReviewService
             }
 
             if (
-                $order->status === 'cancelled' ||
-                $order->payment_status === 'refunded'
+                $order->status === 'cancelled'
+                || in_array(
+                    $order->payment_status,
+                    ['refund_pending', 'refunded'],
+                    true
+                )
             ) {
                 throw new RuntimeException(
                     'Cancelled or refunded orders cannot be approved for fulfillment.'
@@ -131,8 +144,12 @@ class SecurityReviewService
                 'security_review.approved',
                 $order,
                 [
-                    'security_review_id' => $lockedReview->id,
-                    'risk_score' => $lockedReview->risk_score,
+                    'security_review_id' =>
+                        $lockedReview->id,
+
+                    'risk_score' =>
+                        $lockedReview->risk_score,
+
                     'notes' => $notes,
                 ]
             );
@@ -145,7 +162,10 @@ class SecurityReviewService
         SecurityReview $review,
         ?string $notes = null
     ): SecurityReview {
-        return DB::transaction(function () use ($review, $notes) {
+        return DB::transaction(function () use (
+            $review,
+            $notes
+        ) {
             $lockedReview = SecurityReview::query()
                 ->whereKey($review->id)
                 ->lockForUpdate()
@@ -172,19 +192,39 @@ class SecurityReviewService
                 'reviewed_at' => now(),
             ]);
 
-            $order->update([
-                'status' => 'cancelled',
-                'fulfillment_status' => 'failed',
-            ]);
+            $refund = null;
+
+            if ($order->payment_status === 'paid') {
+                $refund = $this->refundService
+                    ->requireRefund(
+                        $order,
+                        $notes
+                            ?? 'Security review rejected.'
+                    );
+            } else {
+                $order->update([
+                    'status' => 'cancelled',
+                    'fulfillment_status' => 'failed',
+                ]);
+            }
 
             $this->auditLogService->log(
                 'security_review.rejected',
-                $order,
+                $order->fresh(),
                 [
-                    'security_review_id' => $lockedReview->id,
-                    'risk_score' => $lockedReview->risk_score,
+                    'security_review_id' =>
+                        $lockedReview->id,
+
+                    'risk_score' =>
+                        $lockedReview->risk_score,
+
                     'notes' => $notes,
-                    'refund_required' => $order->payment_status === 'paid',
+
+                    'refund_required' =>
+                        $refund !== null,
+
+                    'refund_id' =>
+                        $refund?->id,
                 ]
             );
 
@@ -192,26 +232,38 @@ class SecurityReviewService
         });
     }
 
-    private function calculateRisk(Order $order): array
-    {
+    private function calculateRisk(
+        Order $order
+    ): array {
         $score = 0;
         $flags = [];
 
-        $email = strtolower(trim((string) $order->customer_email));
+        $email = strtolower(
+            trim(
+                (string) $order->customer_email
+            )
+        );
 
         $now = now();
-        $rapidWindow = $now->copy()->subMinutes(
-            self::RAPID_ORDER_WINDOW_MINUTES
-        );
-        $failedPaymentWindow = $now->copy()->subHours(
-            self::FAILED_PAYMENT_WINDOW_HOURS
-        );
+
+        $rapidWindow =
+            $now->copy()->subMinutes(
+                self::RAPID_ORDER_WINDOW_MINUTES
+            );
+
+        $failedPaymentWindow =
+            $now->copy()->subHours(
+                self::FAILED_PAYMENT_WINDOW_HOURS
+            );
 
         $addFlag = function (
             string $code,
             int $points,
             string $reason
-        ) use (&$score, &$flags): void {
+        ) use (
+            &$score,
+            &$flags
+        ): void {
             $score += $points;
 
             $flags[] = [
@@ -224,7 +276,10 @@ class SecurityReviewService
         /*
          * 1. High-value order
          */
-        if ((float) $order->total >= self::HIGH_VALUE_THRESHOLD) {
+        if (
+            (float) $order->total
+            >= self::HIGH_VALUE_THRESHOLD
+        ) {
             $addFlag(
                 'high_value_order',
                 20,
@@ -247,8 +302,15 @@ class SecurityReviewService
          * 3. Rapid orders from the same email
          */
         $rapidOrdersByEmail = Order::query()
-            ->whereRaw('LOWER(customer_email) = ?', [$email])
-            ->where('created_at', '>=', $rapidWindow)
+            ->whereRaw(
+                'LOWER(customer_email) = ?',
+                [$email]
+            )
+            ->where(
+                'created_at',
+                '>=',
+                $rapidWindow
+            )
             ->count();
 
         if ($rapidOrdersByEmail >= 3) {
@@ -262,10 +324,17 @@ class SecurityReviewService
         /*
          * 4. Failed payment attempt on current order
          */
-        $currentOrderFailedPayments = PaymentAttempt::query()
-            ->where('order_id', $order->id)
-            ->where('status', 'failed')
-            ->count();
+        $currentOrderFailedPayments =
+            PaymentAttempt::query()
+                ->where(
+                    'order_id',
+                    $order->id
+                )
+                ->where(
+                    'status',
+                    'failed'
+                )
+                ->count();
 
         if ($currentOrderFailedPayments >= 1) {
             $addFlag(
@@ -278,19 +347,27 @@ class SecurityReviewService
         /*
          * 5. Repeated failed payments for same email
          */
-        $failedPaymentsByEmail = PaymentAttempt::query()
-            ->where('status', 'failed')
-            ->where('created_at', '>=', $failedPaymentWindow)
-            ->whereIn(
-                'order_id',
-                Order::query()
-                    ->select('id')
-                    ->whereRaw(
-                        'LOWER(customer_email) = ?',
-                        [$email]
-                    )
-            )
-            ->count();
+        $failedPaymentsByEmail =
+            PaymentAttempt::query()
+                ->where(
+                    'status',
+                    'failed'
+                )
+                ->where(
+                    'created_at',
+                    '>=',
+                    $failedPaymentWindow
+                )
+                ->whereIn(
+                    'order_id',
+                    Order::query()
+                        ->select('id')
+                        ->whereRaw(
+                            'LOWER(customer_email) = ?',
+                            [$email]
+                        )
+                )
+                ->count();
 
         if ($failedPaymentsByEmail >= 2) {
             $addFlag(
@@ -304,19 +381,31 @@ class SecurityReviewService
          * 6. IP-based checks
          */
         $evidence = OrderEvidence::query()
-            ->where('order_id', $order->id)
+            ->where(
+                'order_id',
+                $order->id
+            )
             ->first();
 
-        $ipAddress = $evidence?->ip_address;
+        $ipAddress =
+            $evidence?->ip_address;
 
         if ($ipAddress) {
             /*
              * Rapid orders from same IP
              */
-            $rapidOrdersByIp = OrderEvidence::query()
-                ->where('ip_address', $ipAddress)
-                ->where('created_at', '>=', $rapidWindow)
-                ->count();
+            $rapidOrdersByIp =
+                OrderEvidence::query()
+                    ->where(
+                        'ip_address',
+                        $ipAddress
+                    )
+                    ->where(
+                        'created_at',
+                        '>=',
+                        $rapidWindow
+                    )
+                    ->count();
 
             if ($rapidOrdersByIp >= 3) {
                 $addFlag(
@@ -329,16 +418,27 @@ class SecurityReviewService
             /*
              * Failed payments from same IP
              */
-            $failedPaymentsByIp = PaymentAttempt::query()
-                ->where('status', 'failed')
-                ->where('created_at', '>=', $failedPaymentWindow)
-                ->whereIn(
-                    'order_id',
-                    OrderEvidence::query()
-                        ->select('order_id')
-                        ->where('ip_address', $ipAddress)
-                )
-                ->count();
+            $failedPaymentsByIp =
+                PaymentAttempt::query()
+                    ->where(
+                        'status',
+                        'failed'
+                    )
+                    ->where(
+                        'created_at',
+                        '>=',
+                        $failedPaymentWindow
+                    )
+                    ->whereIn(
+                        'order_id',
+                        OrderEvidence::query()
+                            ->select('order_id')
+                            ->where(
+                                'ip_address',
+                                $ipAddress
+                            )
+                    )
+                    ->count();
 
             if ($failedPaymentsByIp >= 2) {
                 $addFlag(
