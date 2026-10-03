@@ -14,23 +14,32 @@ class SecurityReviewTest extends TestCase
 
     public function test_only_paid_order_can_enter_security_review(): void
     {
-        $order = $this->makeOrder('unpaid');
+        $order =
+            $this->makeOrder('unpaid');
 
         $this->expectException(
             \RuntimeException::class
         );
 
-        app(SecurityReviewService::class)
-            ->startReview($order);
+        app(
+            SecurityReviewService::class
+        )->startReview($order);
     }
 
     public function test_approved_review_moves_order_to_processing(): void
     {
-        $order = $this->makeOrder('paid');
+        $order =
+            $this->makeOrder('paid');
 
-        $service = app(SecurityReviewService::class);
+        $service =
+            app(
+                SecurityReviewService::class
+            );
 
-        $review = $service->startReview($order);
+        $review =
+            $service->startReview(
+                $order
+            );
 
         $service->approve(
             $review,
@@ -44,28 +53,55 @@ class SecurityReviewTest extends TestCase
 
         $this->assertSame(
             'processing',
-            $order->fresh()->fulfillment_status
+            $order->fresh()
+                ->fulfillment_status
         );
     }
 
     public function test_rejected_paid_order_creates_refund_requirement(): void
     {
-        $order = $this->makeOrder('paid');
+        $order =
+            $this->makeOrder('paid');
 
-        PaymentAttempt::create([
-            'order_id' => $order->id,
-            'provider' => 'test-provider',
-            'status' => 'paid',
-            'amount' => $order->total,
-            'currency' => $order->currency,
-            'provider_payment_id' => 'PAID-TEST-001',
-            'idempotency_key' => 'PAY-TEST-REFUND-001',
-            'paid_at' => now(),
-        ]);
+        $attempt =
+            PaymentAttempt::create([
+                'order_id' =>
+                    $order->id,
 
-        $service = app(SecurityReviewService::class);
+                'provider' =>
+                    'test-provider',
 
-        $review = $service->startReview($order);
+                'status' =>
+                    'paid',
+
+                'amount' =>
+                    $order->total,
+
+                'currency' =>
+                    $order->currency,
+
+                'provider_payment_id' =>
+                    'PAID-TEST-001',
+
+                'idempotency_key' =>
+                    'PAY-TEST-REFUND-001',
+
+                'merchant_reference' =>
+                    'MR-TEST-REFUND-001',
+
+                'paid_at' =>
+                    now(),
+            ]);
+
+        $service =
+            app(
+                SecurityReviewService::class
+            );
+
+        $review =
+            $service->startReview(
+                $order
+            );
 
         $service->reject(
             $review,
@@ -90,38 +126,71 @@ class SecurityReviewTest extends TestCase
         );
 
         $this->assertSame(
-            'failed',
+            'blocked',
             $order->fulfillment_status
         );
 
         $this->assertDatabaseHas(
             'refunds',
             [
-                'order_id' => $order->id,
-                'status' => 'required',
-                'currency' => 'AZN',
+                'order_id' =>
+                    $order->id,
+
+                'payment_attempt_id' =>
+                    $attempt->id,
+
+                'status' =>
+                    'required',
+
+                'currency' =>
+                    'AZN',
             ]
         );
     }
 
     public function test_rejecting_same_review_twice_does_not_duplicate_refund(): void
     {
-        $order = $this->makeOrder('paid');
+        $order =
+            $this->makeOrder('paid');
 
         PaymentAttempt::create([
-            'order_id' => $order->id,
-            'provider' => 'test-provider',
-            'status' => 'paid',
-            'amount' => $order->total,
-            'currency' => $order->currency,
-            'provider_payment_id' => 'PAID-TEST-002',
-            'idempotency_key' => 'PAY-TEST-REFUND-002',
-            'paid_at' => now(),
+            'order_id' =>
+                $order->id,
+
+            'provider' =>
+                'test-provider',
+
+            'status' =>
+                'paid',
+
+            'amount' =>
+                $order->total,
+
+            'currency' =>
+                $order->currency,
+
+            'provider_payment_id' =>
+                'PAID-TEST-002',
+
+            'idempotency_key' =>
+                'PAY-TEST-REFUND-002',
+
+            'merchant_reference' =>
+                'MR-TEST-REFUND-002',
+
+            'paid_at' =>
+                now(),
         ]);
 
-        $service = app(SecurityReviewService::class);
+        $service =
+            app(
+                SecurityReviewService::class
+            );
 
-        $review = $service->startReview($order);
+        $review =
+            $service->startReview(
+                $order
+            );
 
         $service->reject(
             $review,
@@ -133,7 +202,10 @@ class SecurityReviewTest extends TestCase
             'Rejected again.'
         );
 
-        $this->assertDatabaseCount('refunds', 1);
+        $this->assertDatabaseCount(
+            'refunds',
+            1
+        );
     }
 
     private function makeOrder(
@@ -143,19 +215,32 @@ class SecurityReviewTest extends TestCase
             'order_number' =>
                 'ORD-TEST-' .
                 strtoupper(
-                    fake()->unique()->bothify('????####')
+                    fake()
+                        ->unique()
+                        ->bothify(
+                            '????####'
+                        )
                 ),
+
             'status' =>
                 $paymentStatus === 'paid'
                     ? 'processing'
                     : 'pending',
-            'payment_status' => $paymentStatus,
-            'fulfillment_status' => 'pending',
+
+            'payment_status' =>
+                $paymentStatus,
+
+            'fulfillment_status' =>
+                'pending',
+
             'subtotal' => 20,
             'total' => 20,
             'currency' => 'AZN',
+
             'customer_email' =>
-                fake()->unique()->safeEmail(),
+                fake()
+                    ->unique()
+                    ->safeEmail(),
         ]);
     }
-}
+}   

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\FulfillmentAttempt;
 use App\Models\Order;
 use App\Models\OrderEvidence;
 use App\Models\PaymentAttempt;
@@ -21,56 +22,94 @@ class SecurityReviewService
     ) {
     }
 
-    public function startReview(Order $order): SecurityReview
-    {
+    public function startReview(
+        Order $order
+    ): SecurityReview {
         return DB::transaction(function () use ($order) {
             $lockedOrder = Order::query()
                 ->whereKey($order->id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($lockedOrder->payment_status !== 'paid') {
+            if (
+                $lockedOrder->payment_status
+                !== 'paid'
+            ) {
                 throw new RuntimeException(
                     'Only paid orders can enter security review.'
                 );
             }
 
-            $review = SecurityReview::query()
-                ->where('order_id', $lockedOrder->id)
-                ->lockForUpdate()
-                ->first();
+            if (
+                $lockedOrder->status
+                === 'cancelled'
+            ) {
+                throw new RuntimeException(
+                    'Cancelled orders cannot enter security review.'
+                );
+            }
 
-            if ($review && $review->status !== 'pending') {
+            $review =
+                SecurityReview::query()
+                    ->where(
+                        'order_id',
+                        $lockedOrder->id
+                    )
+                    ->lockForUpdate()
+                    ->first();
+
+            if (
+                $review
+                && $review->status !== 'pending'
+            ) {
                 return $review;
             }
 
             [$riskScore, $riskFlags] =
-                $this->calculateRisk($lockedOrder);
+                $this->calculateRisk(
+                    $lockedOrder
+                );
 
             if (! $review) {
-                $review = SecurityReview::create([
-                    'order_id' => $lockedOrder->id,
-                    'status' => 'pending',
-                    'risk_score' => $riskScore,
-                    'risk_flags' => $riskFlags,
-                ]);
+                $review =
+                    SecurityReview::create([
+                        'order_id' =>
+                            $lockedOrder->id,
+
+                        'status' =>
+                            'pending',
+
+                        'risk_score' =>
+                            $riskScore,
+
+                        'risk_flags' =>
+                            $riskFlags,
+                    ]);
             } else {
                 $review->update([
-                    'risk_score' => $riskScore,
-                    'risk_flags' => $riskFlags,
+                    'risk_score' =>
+                        $riskScore,
+
+                    'risk_flags' =>
+                        $riskFlags,
                 ]);
             }
 
             $lockedOrder->update([
-                'fulfillment_status' => 'security_review',
+                'fulfillment_status' =>
+                    'security_review',
             ]);
 
             $this->auditLogService->log(
                 'security_review.started',
                 $lockedOrder,
                 [
-                    'security_review_id' => $review->id,
-                    'risk_score' => $riskScore,
+                    'security_review_id' =>
+                        $review->id,
+
+                    'risk_score' =>
+                        $riskScore,
+
                     'risk_flags' =>
                         array_column(
                             $riskFlags,
@@ -91,27 +130,44 @@ class SecurityReviewService
             $review,
             $notes
         ) {
-            $lockedReview = SecurityReview::query()
-                ->whereKey($review->id)
+            /*
+             * Order first.
+             */
+            $order = Order::query()
+                ->whereKey($review->order_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($lockedReview->status === 'approved') {
+            $lockedReview =
+                SecurityReview::query()
+                    ->whereKey($review->id)
+                    ->where(
+                        'order_id',
+                        $order->id
+                    )
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+            if (
+                $lockedReview->status
+                === 'approved'
+            ) {
                 return $lockedReview->fresh();
             }
 
-            if ($lockedReview->status !== 'pending') {
+            if (
+                $lockedReview->status
+                !== 'pending'
+            ) {
                 throw new RuntimeException(
                     'Only pending security reviews can be approved.'
                 );
             }
 
-            $order = Order::query()
-                ->whereKey($lockedReview->order_id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if ($order->payment_status !== 'paid') {
+            if (
+                $order->payment_status
+                !== 'paid'
+            ) {
                 throw new RuntimeException(
                     'A security review can only be approved for a paid order.'
                 );
@@ -121,7 +177,10 @@ class SecurityReviewService
                 $order->status === 'cancelled'
                 || in_array(
                     $order->payment_status,
-                    ['refund_pending', 'refunded'],
+                    [
+                        'refund_pending',
+                        'refunded',
+                    ],
                     true
                 )
             ) {
@@ -137,7 +196,8 @@ class SecurityReviewService
             ]);
 
             $order->update([
-                'fulfillment_status' => 'processing',
+                'fulfillment_status' =>
+                    'processing',
             ]);
 
             $this->auditLogService->log(
@@ -148,9 +208,11 @@ class SecurityReviewService
                         $lockedReview->id,
 
                     'risk_score' =>
-                        $lockedReview->risk_score,
+                        $lockedReview
+                            ->risk_score,
 
-                    'notes' => $notes,
+                    'notes' =>
+                        $notes,
                 ]
             );
 
@@ -166,47 +228,86 @@ class SecurityReviewService
             $review,
             $notes
         ) {
-            $lockedReview = SecurityReview::query()
-                ->whereKey($review->id)
+            /*
+             * Order first.
+             */
+            $order = Order::query()
+                ->whereKey($review->order_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($lockedReview->status === 'rejected') {
+            $lockedReview =
+                SecurityReview::query()
+                    ->whereKey($review->id)
+                    ->where(
+                        'order_id',
+                        $order->id
+                    )
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+            if (
+                $lockedReview->status
+                === 'rejected'
+            ) {
                 return $lockedReview->fresh();
             }
 
-            if ($lockedReview->status !== 'pending') {
+            if (
+                $lockedReview->status
+                !== 'pending'
+            ) {
                 throw new RuntimeException(
                     'Only pending security reviews can be rejected.'
                 );
             }
 
-            $order = Order::query()
-                ->whereKey($lockedReview->order_id)
-                ->lockForUpdate()
-                ->firstOrFail();
+            $fulfillmentStarted =
+                FulfillmentAttempt::query()
+                    ->where(
+                        'order_id',
+                        $order->id
+                    )
+                    ->exists();
+
+            if ($fulfillmentStarted) {
+                throw new RuntimeException(
+                    'Security review cannot be rejected after fulfillment has started.'
+                );
+            }
+
+            /*
+             * Create refund requirement BEFORE finalising
+             * the rejection state.
+             *
+             * If refund preparation fails, whole transaction
+             * rolls back.
+             */
+            $refund = null;
+
+            if ($order->payment_status === 'paid') {
+                $refund =
+                    $this->refundService
+                        ->requireRefund(
+                            $order,
+                            null,
+                            $notes
+                                ?? 'Security review rejected.',
+                            true
+                        );
+            } else {
+                $order->update([
+                    'status' => 'cancelled',
+                    'fulfillment_status' =>
+                        'blocked',
+                ]);
+            }
 
             $lockedReview->update([
                 'status' => 'rejected',
                 'review_notes' => $notes,
                 'reviewed_at' => now(),
             ]);
-
-            $refund = null;
-
-            if ($order->payment_status === 'paid') {
-                $refund = $this->refundService
-                    ->requireRefund(
-                        $order,
-                        $notes
-                            ?? 'Security review rejected.'
-                    );
-            } else {
-                $order->update([
-                    'status' => 'cancelled',
-                    'fulfillment_status' => 'failed',
-                ]);
-            }
 
             $this->auditLogService->log(
                 'security_review.rejected',
@@ -216,9 +317,11 @@ class SecurityReviewService
                         $lockedReview->id,
 
                     'risk_score' =>
-                        $lockedReview->risk_score,
+                        $lockedReview
+                            ->risk_score,
 
-                    'notes' => $notes,
+                    'notes' =>
+                        $notes,
 
                     'refund_required' =>
                         $refund !== null,
@@ -240,7 +343,8 @@ class SecurityReviewService
 
         $email = strtolower(
             trim(
-                (string) $order->customer_email
+                (string)
+                $order->customer_email
             )
         );
 
@@ -273,9 +377,6 @@ class SecurityReviewService
             ];
         };
 
-        /*
-         * 1. High-value order
-         */
         if (
             (float) $order->total
             >= self::HIGH_VALUE_THRESHOLD
@@ -287,9 +388,6 @@ class SecurityReviewService
             );
         }
 
-        /*
-         * 2. Guest checkout
-         */
         if (! $order->user_id) {
             $addFlag(
                 'guest_checkout',
@@ -298,20 +396,18 @@ class SecurityReviewService
             );
         }
 
-        /*
-         * 3. Rapid orders from the same email
-         */
-        $rapidOrdersByEmail = Order::query()
-            ->whereRaw(
-                'LOWER(customer_email) = ?',
-                [$email]
-            )
-            ->where(
-                'created_at',
-                '>=',
-                $rapidWindow
-            )
-            ->count();
+        $rapidOrdersByEmail =
+            Order::query()
+                ->whereRaw(
+                    'LOWER(customer_email) = ?',
+                    [$email]
+                )
+                ->where(
+                    'created_at',
+                    '>=',
+                    $rapidWindow
+                )
+                ->count();
 
         if ($rapidOrdersByEmail >= 3) {
             $addFlag(
@@ -321,9 +417,6 @@ class SecurityReviewService
             );
         }
 
-        /*
-         * 4. Failed payment attempt on current order
-         */
         $currentOrderFailedPayments =
             PaymentAttempt::query()
                 ->where(
@@ -336,7 +429,9 @@ class SecurityReviewService
                 )
                 ->count();
 
-        if ($currentOrderFailedPayments >= 1) {
+        if (
+            $currentOrderFailedPayments >= 1
+        ) {
             $addFlag(
                 'failed_payment_attempt',
                 15,
@@ -344,9 +439,6 @@ class SecurityReviewService
             );
         }
 
-        /*
-         * 5. Repeated failed payments for same email
-         */
         $failedPaymentsByEmail =
             PaymentAttempt::query()
                 ->where(
@@ -369,7 +461,9 @@ class SecurityReviewService
                 )
                 ->count();
 
-        if ($failedPaymentsByEmail >= 2) {
+        if (
+            $failedPaymentsByEmail >= 2
+        ) {
             $addFlag(
                 'repeated_failed_payments_email',
                 25,
@@ -377,23 +471,18 @@ class SecurityReviewService
             );
         }
 
-        /*
-         * 6. IP-based checks
-         */
-        $evidence = OrderEvidence::query()
-            ->where(
-                'order_id',
-                $order->id
-            )
-            ->first();
+        $evidence =
+            OrderEvidence::query()
+                ->where(
+                    'order_id',
+                    $order->id
+                )
+                ->first();
 
         $ipAddress =
             $evidence?->ip_address;
 
         if ($ipAddress) {
-            /*
-             * Rapid orders from same IP
-             */
             $rapidOrdersByIp =
                 OrderEvidence::query()
                     ->where(
@@ -415,9 +504,6 @@ class SecurityReviewService
                 );
             }
 
-            /*
-             * Failed payments from same IP
-             */
             $failedPaymentsByIp =
                 PaymentAttempt::query()
                     ->where(
@@ -440,7 +526,9 @@ class SecurityReviewService
                     )
                     ->count();
 
-            if ($failedPaymentsByIp >= 2) {
+            if (
+                $failedPaymentsByIp >= 2
+            ) {
                 $addFlag(
                     'repeated_failed_payments_ip',
                     20,

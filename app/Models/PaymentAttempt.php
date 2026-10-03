@@ -15,6 +15,7 @@ class PaymentAttempt extends Model
         'currency',
         'provider_payment_id',
         'idempotency_key',
+        'merchant_reference',
         'request_payload',
         'response_payload',
         'paid_at',

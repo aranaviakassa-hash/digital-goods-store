@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\PaymentAttempt;
+use App\Models\WebhookEvent;
 use App\Services\AuditLogService;
 use App\Services\OrderService;
+use App\Services\RefundService;
 use App\Services\SecurityReviewService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,15 +19,24 @@ class PaymentWebhookController extends Controller
         Request $request,
         OrderService $orderService,
         SecurityReviewService $securityReviewService,
+        RefundService $refundService,
         AuditLogService $auditLogService
     ): JsonResponse {
-        $expectedSecret = (string) config(
-            'payments.webhook_secret'
-        );
+        $rawBody =
+            $request->getContent();
 
-        $providedSecret = (string) $request->header(
-            'X-Webhook-Secret'
-        );
+        $bodyHash =
+            hash('sha256', $rawBody);
+
+        $expectedSecret =
+            (string) config(
+                'payments.webhook_secret'
+            );
+
+        $providedSecret =
+            (string) $request->header(
+                'X-Webhook-Secret'
+            );
 
         if (
             $expectedSecret === ''
@@ -41,16 +52,16 @@ class PaymentWebhookController extends Controller
         }
 
         $validated = $request->validate([
-            'order_number' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-
             'provider' => [
                 'required',
                 'string',
                 'max:50',
+            ],
+
+            'merchant_reference' => [
+                'required',
+                'string',
+                'max:255',
             ],
 
             'provider_payment_id' => [
@@ -59,160 +70,547 @@ class PaymentWebhookController extends Controller
                 'max:255',
             ],
 
+            'amount' => [
+                'required',
+                'decimal:0,2',
+            ],
+
+            'currency' => [
+                'required',
+                'string',
+                'size:3',
+            ],
+
             'status' => [
                 'required',
                 'in:paid,failed',
             ],
         ]);
 
-        $result = DB::transaction(function () use (
-            $validated,
-            $orderService,
-            $securityReviewService,
-            $auditLogService
-        ) {
-            $order = Order::query()
-                ->where(
-                    'order_number',
-                    $validated['order_number']
-                )
-                ->lockForUpdate()
-                ->firstOrFail();
+        $validated['currency'] =
+            strtoupper(
+                $validated['currency']
+            );
 
-            $attempt = PaymentAttempt::query()
-                ->where('order_id', $order->id)
+        $eventKey = hash(
+            'sha256',
+            implode('|', [
+                $validated['provider'],
+                $validated['merchant_reference'],
+                $validated['provider_payment_id'],
+                $validated['status'],
+                (string) $validated['amount'],
+                $validated['currency'],
+                $bodyHash,
+            ])
+        );
+
+        $event = WebhookEvent::firstOrCreate(
+            [
+                'provider' =>
+                    $validated['provider'],
+
+                'event_key' =>
+                    $eventKey,
+            ],
+            [
+                'provider_payment_id' =>
+                    $validated[
+                        'provider_payment_id'
+                    ],
+
+                'merchant_reference' =>
+                    $validated[
+                        'merchant_reference'
+                    ],
+
+                'event_type' =>
+                    $validated['status'],
+
+                'processing_status' =>
+                    'received',
+
+                'payload' =>
+                    $validated,
+
+                'body_hash' =>
+                    $bodyHash,
+
+                'headers_hash' =>
+                    hash(
+                        'sha256',
+                        json_encode(
+                            [
+                                'content-type' =>
+                                    $request->header(
+                                        'Content-Type'
+                                    ),
+
+                                'user-agent' =>
+                                    $request->header(
+                                        'User-Agent'
+                                    ),
+                            ],
+                            JSON_UNESCAPED_SLASHES
+                        )
+                    ),
+
+                'received_at' =>
+                    now(),
+            ]
+        );
+
+        if (
+            ! $event->wasRecentlyCreated
+            && $event->processing_status
+                === 'processed'
+        ) {
+            return response()->json([
+                'message' =>
+                    'Already processed',
+            ]);
+        }
+
+        $attempt =
+            PaymentAttempt::query()
                 ->where(
                     'provider',
                     $validated['provider']
                 )
-                ->where(function ($query) use ($validated) {
-                    $query
-                        ->where(
-                            'provider_payment_id',
-                            $validated['provider_payment_id']
-                        )
-                        ->orWhereNull(
-                            'provider_payment_id'
-                        );
-                })
-                ->latest('id')
-                ->lockForUpdate()
+                ->where(
+                    'merchant_reference',
+                    $validated[
+                        'merchant_reference'
+                    ]
+                )
                 ->first();
 
-            if (! $attempt) {
-                abort(
-                    422,
-                    'Matching payment attempt not found.'
-                );
-            }
+        if (! $attempt) {
+            $event->update([
+                'processing_status' =>
+                    'rejected',
 
-            if (
-                filled($attempt->provider_payment_id)
-                && $attempt->provider_payment_id
-                    !== $validated['provider_payment_id']
-            ) {
-                abort(
-                    409,
-                    'Payment reference mismatch.'
-                );
-            }
+                'processing_result' =>
+                    'Unknown merchant reference.',
 
-            if (! $attempt->provider_payment_id) {
-                $attempt->update([
+                'processed_at' =>
+                    now(),
+            ]);
+
+            return response()->json(
+                [
+                    'message' =>
+                        'Payment attempt not found.',
+                ],
+                422
+            );
+        }
+
+        if (
+            $this->minorUnits(
+                $validated['amount']
+            )
+            !==
+            $this->minorUnits(
+                $attempt->amount
+            )
+            ||
+            $validated['currency']
+            !== strtoupper(
+                $attempt->currency
+            )
+        ) {
+            $event->update([
+                'processing_status' =>
+                    'rejected',
+
+                'processing_result' =>
+                    'Amount or currency mismatch.',
+
+                'processed_at' =>
+                    now(),
+            ]);
+
+            $auditLogService->log(
+                'payment.webhook.amount_mismatch',
+                $attempt->order,
+                [
+                    'payment_attempt_id' =>
+                        $attempt->id,
+
                     'provider_payment_id' =>
-                        $validated['provider_payment_id'],
-                ]);
-            }
+                        $validated[
+                            'provider_payment_id'
+                        ],
 
-            if ($validated['status'] === 'paid') {
+                    'expected_amount' =>
+                        $attempt->amount,
+
+                    'received_amount' =>
+                        $validated['amount'],
+
+                    'expected_currency' =>
+                        $attempt->currency,
+
+                    'received_currency' =>
+                        $validated['currency'],
+                ]
+            );
+
+            return response()->json(
+                [
+                    'message' =>
+                        'Payment amount or currency mismatch.',
+                ],
+                422
+            );
+        }
+
+        $result =
+            DB::transaction(function () use (
+                $validated,
+                $attempt,
+                $event,
+                $orderService,
+                $securityReviewService,
+                $refundService,
+                $auditLogService
+            ) {
+                /*
+                 * Canonical lock order:
+                 * Order first, then attempt.
+                 */
+                $order = Order::query()
+                    ->whereKey(
+                        $attempt->order_id
+                    )
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $lockedAttempt =
+                    PaymentAttempt::query()
+                        ->whereKey(
+                            $attempt->id
+                        )
+                        ->where(
+                            'order_id',
+                            $order->id
+                        )
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
                 if (
-                    $attempt->status === 'paid'
-                    || $order->payment_status === 'paid'
+                    filled(
+                        $lockedAttempt
+                            ->provider_payment_id
+                    )
+                    &&
+                    $lockedAttempt
+                        ->provider_payment_id
+                    !==
+                    $validated[
+                        'provider_payment_id'
+                    ]
                 ) {
+                    $event->update([
+                        'processing_status' =>
+                            'rejected',
+
+                        'processing_result' =>
+                            'Provider payment reference mismatch.',
+
+                        'processed_at' =>
+                            now(),
+                    ]);
+
                     return [
-                        'message' => 'Already processed',
+                        'message' =>
+                            'Payment reference mismatch.',
+
+                        'status' => 409,
+                    ];
+                }
+
+                if (
+                    $validated['status']
+                    === 'failed'
+                ) {
+                    if (
+                        $lockedAttempt->status
+                        === 'paid'
+                    ) {
+                        $event->update([
+                            'processing_status' =>
+                                'processed',
+
+                            'processing_result' =>
+                                'Paid payment was not downgraded.',
+
+                            'processed_at' =>
+                                now(),
+                        ]);
+
+                        return [
+                            'message' =>
+                                'Paid payment cannot be downgraded.',
+
+                            'status' => 200,
+                        ];
+                    }
+
+                    $orderService
+                        ->markPaymentFailed(
+                            $lockedAttempt,
+                            [
+                                'source' =>
+                                    'local_webhook',
+
+                                'status' =>
+                                    'failed',
+                            ]
+                        );
+
+                    $auditLogService->log(
+                        'payment.webhook.failed',
+                        $order,
+                        [
+                            'payment_attempt_id' =>
+                                $lockedAttempt->id,
+
+                            'provider' =>
+                                $validated[
+                                    'provider'
+                                ],
+
+                            'provider_payment_id' =>
+                                $validated[
+                                    'provider_payment_id'
+                                ],
+                        ]
+                    );
+
+                    $event->update([
+                        'processing_status' =>
+                            'processed',
+
+                        'processing_result' =>
+                            'Failure recorded.',
+
+                        'processed_at' =>
+                            now(),
+                    ]);
+
+                    return [
+                        'message' =>
+                            'Failure recorded',
+
                         'status' => 200,
                     ];
                 }
 
+                /*
+                 * paid
+                 */
                 $orderService->markPaymentPaid(
-                    $attempt,
-                    $validated['provider_payment_id'],
+                    $lockedAttempt,
+                    $validated[
+                        'provider_payment_id'
+                    ],
                     [
-                        'source' => 'local_webhook',
-                        'status' => 'paid',
+                        'source' =>
+                            'local_webhook',
+
+                        'status' =>
+                            'paid',
                     ]
                 );
+
+                $lockedAttempt->refresh();
+                $order->refresh();
+
+                /*
+                 * Different paid attempt already exists:
+                 * refund this extra payment, but do NOT
+                 * cancel the valid order.
+                 */
+                $anotherPaidAttempt =
+                    PaymentAttempt::query()
+                        ->where(
+                            'order_id',
+                            $order->id
+                        )
+                        ->where(
+                            'status',
+                            'paid'
+                        )
+                        ->where(
+                            'id',
+                            '!=',
+                            $lockedAttempt->id
+                        )
+                        ->exists();
+
+                if ($anotherPaidAttempt) {
+                    $refund =
+                        $refundService
+                            ->requireRefund(
+                                $order,
+                                $lockedAttempt,
+                                'Duplicate payment captured for the same order.',
+                                false
+                            );
+
+                    $event->update([
+                        'processing_status' =>
+                            'processed',
+
+                        'processing_result' =>
+                            'Duplicate payment captured; refund required.',
+
+                        'processed_at' =>
+                            now(),
+                    ]);
+
+                    return [
+                        'message' =>
+                            'Duplicate payment recorded for refund.',
+
+                        'status' => 200,
+                    ];
+                }
+
+                /*
+                 * A late payment must never resurrect
+                 * a cancelled/refund-pending order.
+                 */
+                if (
+                    $order->status === 'cancelled'
+                    ||
+                    in_array(
+                        $order->payment_status,
+                        [
+                            'refund_pending',
+                            'refunded',
+                        ],
+                        true
+                    )
+                ) {
+                    $refund =
+                        $refundService
+                            ->requireRefund(
+                                $order,
+                                $lockedAttempt,
+                                'Payment received after order became non-payable.',
+                                true
+                            );
+
+                    $event->update([
+                        'processing_status' =>
+                            'processed',
+
+                        'processing_result' =>
+                            'Late payment captured; refund required.',
+
+                        'processed_at' =>
+                            now(),
+                    ]);
+
+                    return [
+                        'message' =>
+                            'Late payment recorded for refund.',
+
+                        'status' => 200,
+                    ];
+                }
+
+                /*
+                 * Normal first successful payment.
+                 */
+                $order->update([
+                    'payment_status' =>
+                        'paid',
+
+                    'status' =>
+                        'processing',
+
+                    'fulfillment_status' =>
+                        'security_review',
+
+                    'payment_reference' =>
+                        $validated[
+                            'provider_payment_id'
+                        ],
+                ]);
 
                 $auditLogService->log(
                     'payment.webhook.paid',
                     $order,
                     [
+                        'payment_attempt_id' =>
+                            $lockedAttempt->id,
+
                         'provider' =>
-                            $validated['provider'],
+                            $validated[
+                                'provider'
+                            ],
 
                         'provider_payment_id' =>
-                            $validated['provider_payment_id'],
+                            $validated[
+                                'provider_payment_id'
+                            ],
                     ]
                 );
 
-                $securityReviewService->startReview(
-                    $order->fresh()
-                );
+                $securityReviewService
+                    ->startReview(
+                        $order->fresh()
+                    );
 
-                return [
-                    'message' => 'Payment processed',
-                    'status' => 200,
-                ];
-            }
+                $event->update([
+                    'processing_status' =>
+                        'processed',
 
-            if (
-                $order->payment_status === 'paid'
-                || $attempt->status === 'paid'
-            ) {
+                    'processing_result' =>
+                        'Payment processed.',
+
+                    'processed_at' =>
+                        now(),
+                ]);
+
                 return [
                     'message' =>
-                        'Paid payment cannot be downgraded.',
+                        'Payment processed',
+
                     'status' => 200,
                 ];
-            }
-
-            if ($attempt->status === 'failed') {
-                return [
-                    'message' => 'Already processed',
-                    'status' => 200,
-                ];
-            }
-
-            $orderService->markPaymentFailed(
-                $attempt,
-                [
-                    'source' => 'local_webhook',
-                    'status' => 'failed',
-                ]
-            );
-
-            $auditLogService->log(
-                'payment.webhook.failed',
-                $order,
-                [
-                    'provider' =>
-                        $validated['provider'],
-
-                    'provider_payment_id' =>
-                        $validated['provider_payment_id'],
-                ]
-            );
-
-            return [
-                'message' => 'Failure recorded',
-                'status' => 200,
-            ];
-        });
+            });
 
         return response()->json(
-            ['message' => $result['message']],
+            [
+                'message' =>
+                    $result['message'],
+            ],
             $result['status']
         );
+    }
+
+    private function minorUnits(
+        mixed $amount
+    ): int {
+        $normalized = number_format(
+            (float) $amount,
+            2,
+            '.',
+            ''
+        );
+
+        [$whole, $fraction] =
+            explode(
+                '.',
+                $normalized
+            );
+
+        return ((int) $whole * 100)
+            + (int) $fraction;
     }
 }

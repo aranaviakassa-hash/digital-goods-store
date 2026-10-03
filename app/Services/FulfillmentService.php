@@ -41,22 +41,15 @@ class FulfillmentService
             $item = OrderItem::query()
                 ->findOrFail($attempt->order_item_id);
 
-            DB::transaction(function () use ($attempt) {
-                FulfillmentAttempt::query()
-                    ->whereKey($attempt->id)
-                    ->lockForUpdate()
-                    ->firstOrFail()
-                    ->update([
-                        'status' => 'processing',
-                        'failed_at' => null,
-                    ]);
-            });
+            $this->markProcessing(
+                $order,
+                $attempt
+            );
 
             try {
                 /*
-                 * IMPORTANT:
-                 * External supplier call is intentionally OUTSIDE
-                 * any database transaction.
+                 * External supplier call is intentionally outside
+                 * every database transaction.
                  */
                 $result = $supplier->fulfill(
                     $order->fresh(),
@@ -71,40 +64,52 @@ class FulfillmentService
                     $result['response'] ?? $result;
 
                 DB::transaction(function () use (
-                    $attempt,
                     $order,
+                    $attempt,
                     $supplierName,
                     $supplierReference,
                     $response
                 ) {
-                    $lockedAttempt =
-                        FulfillmentAttempt::query()
-                            ->whereKey($attempt->id)
-                            ->lockForUpdate()
-                            ->firstOrFail();
+                    $lockedOrder = Order::query()
+                        ->whereKey($order->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    $lockedAttempt = FulfillmentAttempt::query()
+                        ->whereKey($attempt->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
 
                     if ($lockedAttempt->status === 'fulfilled') {
                         return;
+                    }
+
+                    if ($lockedAttempt->status !== 'processing') {
+                        throw new RuntimeException(
+                            'Fulfillment result arrived for an attempt requiring manual review.'
+                        );
                     }
 
                     $lockedAttempt->update([
                         'status' => 'fulfilled',
                         'supplier_reference' =>
                             $supplierReference,
-                        'response_payload' => $response,
+                        'response_payload' =>
+                            $response,
                         'fulfilled_at' => now(),
                         'failed_at' => null,
                     ]);
 
                     $this->auditLogService->log(
                         'fulfillment.item.completed',
-                        $order,
+                        $lockedOrder,
                         [
                             'fulfillment_attempt_id' =>
                                 $lockedAttempt->id,
                             'order_item_id' =>
                                 $lockedAttempt->order_item_id,
-                            'supplier' => $supplierName,
+                            'supplier' =>
+                                $supplierName,
                             'supplier_reference' =>
                                 $supplierReference,
                         ]
@@ -112,60 +117,60 @@ class FulfillmentService
                 });
             } catch (Throwable $exception) {
                 DB::transaction(function () use (
-                    $attempt,
                     $order,
+                    $attempt,
                     $supplierName,
                     $exception
                 ) {
-                    $lockedAttempt =
-                        FulfillmentAttempt::query()
-                            ->whereKey($attempt->id)
-                            ->lockForUpdate()
-                            ->firstOrFail();
+                    $lockedOrder = Order::query()
+                        ->whereKey($order->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    $lockedAttempt = FulfillmentAttempt::query()
+                        ->whereKey($attempt->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
 
                     if ($lockedAttempt->status !== 'fulfilled') {
-                        /*
-                         * We intentionally use "unknown" rather than
-                         * automatically retrying.
-                         *
-                         * A supplier timeout may happen AFTER the
-                         * external provider has already delivered
-                         * the digital product.
-                         */
                         $lockedAttempt->update([
                             'status' => 'unknown',
                             'failed_at' => now(),
                             'response_payload' => [
                                 'error' =>
                                     $exception->getMessage(),
+                                'manual_review_required' =>
+                                    true,
                             ],
                         ]);
                     }
 
                     FulfillmentAttempt::query()
-                        ->where('order_id', $order->id)
+                        ->where('order_id', $lockedOrder->id)
                         ->where('status', 'reserved')
                         ->update([
                             'status' => 'blocked',
                         ]);
 
-                    $order->update([
+                    $lockedOrder->update([
                         'fulfillment_status' =>
                             'manual_review',
                     ]);
 
                     $this->auditLogService->log(
                         'fulfillment.item.unknown',
-                        $order,
+                        $lockedOrder,
                         [
                             'fulfillment_attempt_id' =>
                                 $lockedAttempt->id,
                             'order_item_id' =>
                                 $lockedAttempt->order_item_id,
-                            'supplier' => $supplierName,
+                            'supplier' =>
+                                $supplierName,
                             'error' =>
                                 $exception->getMessage(),
-                            'manual_review_required' => true,
+                            'manual_review_required' =>
+                                true,
                         ]
                     );
                 });
@@ -178,6 +183,169 @@ class FulfillmentService
             $order,
             $supplierName
         );
+    }
+
+    public function reconcileStaleProcessing(
+        int $staleMinutes = 10
+    ): int {
+        if ($staleMinutes < 1) {
+            throw new RuntimeException(
+                'Stale fulfillment threshold must be at least one minute.'
+            );
+        }
+
+        $threshold = now()->subMinutes(
+            $staleMinutes
+        );
+
+        $candidates = FulfillmentAttempt::query()
+            ->where('status', 'processing')
+            ->whereNotNull('started_at')
+            ->where(
+                'started_at',
+                '<=',
+                $threshold
+            )
+            ->orderBy('id')
+            ->get([
+                'id',
+                'order_id',
+            ]);
+
+        $reconciled = 0;
+
+        foreach ($candidates as $candidate) {
+            $changed = DB::transaction(function () use (
+                $candidate,
+                $threshold
+            ) {
+                /*
+                 * Canonical lock order:
+                 * Order first, then FulfillmentAttempt.
+                 */
+                $lockedOrder = Order::query()
+                    ->whereKey($candidate->order_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $lockedOrder) {
+                    return false;
+                }
+
+                $lockedAttempt = FulfillmentAttempt::query()
+                    ->whereKey($candidate->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $lockedAttempt) {
+                    return false;
+                }
+
+                if (
+                    $lockedAttempt->status !== 'processing'
+                    || ! $lockedAttempt->started_at
+                    || $lockedAttempt->started_at->gt(
+                        $threshold
+                    )
+                ) {
+                    return false;
+                }
+
+                $lockedAttempt->update([
+                    'status' => 'unknown',
+                    'failed_at' => now(),
+                    'response_payload' => [
+                        'error' =>
+                            'Stale processing attempt detected.',
+                        'reason' =>
+                            'stale_processing_timeout',
+                        'manual_review_required' =>
+                            true,
+                    ],
+                ]);
+
+                FulfillmentAttempt::query()
+                    ->where(
+                        'order_id',
+                        $lockedOrder->id
+                    )
+                    ->where('status', 'reserved')
+                    ->update([
+                        'status' => 'blocked',
+                    ]);
+
+                $lockedOrder->update([
+                    'fulfillment_status' =>
+                        'manual_review',
+                ]);
+
+                $this->auditLogService->log(
+                    'fulfillment.stale_processing',
+                    $lockedOrder,
+                    [
+                        'fulfillment_attempt_id' =>
+                            $lockedAttempt->id,
+                        'order_item_id' =>
+                            $lockedAttempt->order_item_id,
+                        'started_at' =>
+                            $lockedAttempt->started_at
+                                ?->toIso8601String(),
+                        'manual_review_required' =>
+                            true,
+                    ]
+                );
+
+                return true;
+            });
+
+            if ($changed) {
+                $reconciled++;
+            }
+        }
+
+        return $reconciled;
+    }
+
+    private function markProcessing(
+        Order $order,
+        FulfillmentAttempt $attempt
+    ): void {
+        DB::transaction(function () use (
+            $order,
+            $attempt
+        ) {
+            $lockedOrder = Order::query()
+                ->whereKey($order->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (
+                $lockedOrder->payment_status !== 'paid'
+                || $lockedOrder->fulfillment_status
+                    !== 'processing'
+            ) {
+                throw new RuntimeException(
+                    'Order is no longer eligible for fulfillment.'
+                );
+            }
+
+            $lockedAttempt = FulfillmentAttempt::query()
+                ->whereKey($attempt->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($lockedAttempt->status !== 'reserved') {
+                throw new RuntimeException(
+                    'Fulfillment attempt requires manual review before retry.'
+                );
+            }
+
+            $lockedAttempt->update([
+                'status' => 'processing',
+                'started_at' => now(),
+                'failed_at' => null,
+            ]);
+        });
     }
 
     private function reserveAttempts(
@@ -229,38 +397,42 @@ class FulfillmentService
                         $supplierName
                     );
 
-                $attempt =
-                    FulfillmentAttempt::query()
-                        ->where('supplier', $supplierName)
-                        ->where('order_item_id', $item->id)
-                        ->first();
+                $attempt = FulfillmentAttempt::query()
+                    ->where(
+                        'supplier',
+                        $supplierName
+                    )
+                    ->where(
+                        'order_item_id',
+                        $item->id
+                    )
+                    ->first();
 
                 if (! $attempt) {
-                    $attempt =
-                        FulfillmentAttempt::create([
-                            'order_id' =>
-                                $lockedOrder->id,
+                    $attempt = FulfillmentAttempt::create([
+                        'order_id' =>
+                            $lockedOrder->id,
+                        'order_item_id' =>
+                            $item->id,
+                        'supplier' =>
+                            $supplierName,
+                        'status' =>
+                            'reserved',
+                        'idempotency_key' =>
+                            $idempotencyKey,
+                        'request_payload' => [
                             'order_item_id' =>
                                 $item->id,
-                            'supplier' =>
-                                $supplierName,
-                            'status' =>
-                                'reserved',
-                            'idempotency_key' =>
-                                $idempotencyKey,
-                            'request_payload' => [
-                                'order_item_id' =>
-                                    $item->id,
-                                'product_id' =>
-                                    $item->product_id,
-                                'product_code' =>
-                                    $item->product_code,
-                                'quantity' =>
-                                    $item->quantity,
-                                'delivery_data' =>
-                                    $item->delivery_data,
-                            ],
-                        ]);
+                            'product_id' =>
+                                $item->product_id,
+                            'product_code' =>
+                                $item->product_code,
+                            'quantity' =>
+                                $item->quantity,
+                            'delivery_data' =>
+                                $item->delivery_data,
+                        ],
+                    ]);
                 }
 
                 if (
@@ -299,8 +471,15 @@ class FulfillmentService
                 ->firstOrFail();
 
             $attempts = FulfillmentAttempt::query()
-                ->where('order_id', $lockedOrder->id)
-                ->where('supplier', $supplierName)
+                ->where(
+                    'order_id',
+                    $lockedOrder->id
+                )
+                ->where(
+                    'supplier',
+                    $supplierName
+                )
+                ->orderBy('id')
                 ->get();
 
             if ($attempts->isEmpty()) {
@@ -312,7 +491,8 @@ class FulfillmentService
             if (
                 $attempts->contains(
                     fn (FulfillmentAttempt $attempt) =>
-                        $attempt->status !== 'fulfilled'
+                        $attempt->status
+                        !== 'fulfilled'
                 )
             ) {
                 throw new RuntimeException(
@@ -327,7 +507,8 @@ class FulfillmentService
 
             $lockedOrder->update([
                 'status' => 'completed',
-                'fulfillment_status' => 'fulfilled',
+                'fulfillment_status' =>
+                    'fulfilled',
                 'supplier_reference' =>
                     $supplierReferences->count() === 1
                         ? $supplierReferences->first()
@@ -338,11 +519,15 @@ class FulfillmentService
                 'fulfillment.completed',
                 $lockedOrder,
                 [
-                    'supplier' => $supplierName,
+                    'supplier' =>
+                        $supplierName,
                     'attempt_ids' =>
-                        $attempts->pluck('id')->all(),
+                        $attempts
+                            ->pluck('id')
+                            ->all(),
                     'supplier_references' =>
-                        $supplierReferences->all(),
+                        $supplierReferences
+                            ->all(),
                 ]
             );
 
@@ -360,11 +545,11 @@ class FulfillmentService
                 substr(
                     hash(
                         'sha256',
-                        $supplierName .
-                        ':' .
-                        $orderId .
-                        ':' .
-                        $orderItemId
+                        $supplierName
+                        . ':'
+                        . $orderId
+                        . ':'
+                        . $orderItemId
                     ),
                     0,
                     40

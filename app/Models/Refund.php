@@ -12,6 +12,7 @@ class Refund extends Model
         'payment_attempt_id',
         'provider',
         'status',
+        'idempotency_key',
         'amount',
         'currency',
         'provider_refund_id',

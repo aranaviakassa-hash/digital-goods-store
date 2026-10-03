@@ -65,8 +65,8 @@ class Order extends Model
         return $this->hasOne(OrderEvidence::class);
     }
 
-    public function refund(): HasOne
+    public function refunds(): HasMany
     {
-        return $this->hasOne(Refund::class);
+        return $this->hasMany(Refund::class);
     }
 }

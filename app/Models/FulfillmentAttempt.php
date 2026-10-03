@@ -16,6 +16,7 @@ class FulfillmentAttempt extends Model
         'idempotency_key',
         'request_payload',
         'response_payload',
+        'started_at',
         'fulfilled_at',
         'failed_at',
     ];
@@ -25,6 +26,7 @@ class FulfillmentAttempt extends Model
         return [
             'request_payload' => 'array',
             'response_payload' => 'array',
+            'started_at' => 'datetime',
             'fulfilled_at' => 'datetime',
             'failed_at' => 'datetime',
         ];

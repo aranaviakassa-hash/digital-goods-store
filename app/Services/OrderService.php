@@ -17,11 +17,15 @@ class OrderService
     {
         try {
             return DB::transaction(function () use ($data) {
-                $idempotencyKey = $data['idempotency_key'] ?? null;
+                $idempotencyKey =
+                    $data['idempotency_key'] ?? null;
 
                 if ($idempotencyKey) {
                     $existingOrder = Order::query()
-                        ->where('idempotency_key', $idempotencyKey)
+                        ->where(
+                            'idempotency_key',
+                            $idempotencyKey
+                        )
                         ->first();
 
                     if ($existingOrder) {
@@ -33,10 +37,18 @@ class OrderService
                 }
 
                 $product = Product::query()
-                    ->whereKey($data['product_id'])
+                    ->whereKey(
+                        $data['product_id']
+                    )
                     ->where('is_active', true)
-                    ->where('resale_verified', true)
-                    ->where('bank_approved', true)
+                    ->where(
+                        'resale_verified',
+                        true
+                    )
+                    ->where(
+                        'bank_approved',
+                        true
+                    )
                     ->first();
 
                 if (! $product) {
@@ -46,14 +58,22 @@ class OrderService
                 }
 
                 $quantity = max(
-                    (int) ($data['quantity'] ?? 1),
+                    (int) (
+                        $data['quantity']
+                        ?? 1
+                    ),
                     1
                 );
 
                 $order = Order::create([
-                    'order_number' => $this->generateOrderNumber(),
-                    'idempotency_key' => $idempotencyKey,
-                    'user_id' => $data['user_id'] ?? null,
+                    'order_number' =>
+                        $this->generateOrderNumber(),
+
+                    'idempotency_key' =>
+                        $idempotencyKey,
+
+                    'user_id' =>
+                        $data['user_id'] ?? null,
 
                     'status' => 'pending',
                     'payment_status' => 'unpaid',
@@ -62,22 +82,35 @@ class OrderService
                     'subtotal' => 0,
                     'total' => 0,
 
-                    'currency' => $product->currency,
+                    'currency' =>
+                        $product->currency,
 
-                    'customer_email' => $data['customer_email'],
-                    'customer_name' => $data['customer_name'] ?? null,
+                    'customer_email' =>
+                        $data['customer_email'],
+
+                    'customer_name' =>
+                        $data['customer_name']
+                        ?? null,
                 ]);
 
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $product->id,
 
-                    'product_name' => $product->name,
-                    'product_code' => $product->supplier_product_code,
+                    'product_name' =>
+                        $product->name,
+
+                    'product_code' =>
+                        $product
+                            ->supplier_product_code,
 
                     'quantity' => $quantity,
-                    'unit_price' => $product->price,
-                    'currency' => $product->currency,
+
+                    'unit_price' =>
+                        $product->price,
+
+                    'currency' =>
+                        $product->currency,
                 ]);
 
                 return $order->fresh([
@@ -86,11 +119,15 @@ class OrderService
                 ]);
             });
         } catch (QueryException $exception) {
-            $idempotencyKey = $data['idempotency_key'] ?? null;
+            $idempotencyKey =
+                $data['idempotency_key'] ?? null;
 
             if ($idempotencyKey) {
                 $existingOrder = Order::query()
-                    ->where('idempotency_key', $idempotencyKey)
+                    ->where(
+                        'idempotency_key',
+                        $idempotencyKey
+                    )
                     ->first();
 
                 if ($existingOrder) {
@@ -117,32 +154,79 @@ class OrderService
             $idempotencyKey,
             $requestPayload
         ) {
-            $idempotencyKey ??=
-                'PAY-' . strtoupper(Str::uuid()->toString());
+            $lockedOrder = Order::query()
+                ->whereKey($order->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-            $existingAttempt = PaymentAttempt::query()
-                ->where('idempotency_key', $idempotencyKey)
-                ->first();
+            if (
+                $lockedOrder->status !== 'pending'
+                || $lockedOrder->payment_status !== 'unpaid'
+            ) {
+                throw new RuntimeException(
+                    'Order is not eligible for a new payment attempt.'
+                );
+            }
+
+            $idempotencyKey ??=
+                'PAY-' .
+                strtoupper(
+                    Str::uuid()->toString()
+                );
+
+            $existingAttempt =
+                PaymentAttempt::query()
+                    ->where(
+                        'idempotency_key',
+                        $idempotencyKey
+                    )
+                    ->first();
 
             if ($existingAttempt) {
                 return $existingAttempt;
             }
 
-            $attempt = PaymentAttempt::create([
-                'order_id' => $order->id,
-                'provider' => $provider,
-                'status' => 'initiated',
+            $merchantReference =
+                'MR-' .
+                strtoupper(
+                    Str::uuid()->toString()
+                );
 
-                'amount' => $order->total,
-                'currency' => $order->currency,
+            $attempt =
+                PaymentAttempt::create([
+                    'order_id' =>
+                        $lockedOrder->id,
 
-                'idempotency_key' => $idempotencyKey,
-                'request_payload' => $requestPayload,
-            ]);
+                    'provider' =>
+                        $provider,
 
-            $order->update([
-                'payment_provider' => $provider,
-                'payment_status' => 'unpaid',
+                    'status' =>
+                        'initiated',
+
+                    'amount' =>
+                        $lockedOrder->total,
+
+                    'currency' =>
+                        strtoupper(
+                            $lockedOrder->currency
+                        ),
+
+                    'idempotency_key' =>
+                        $idempotencyKey,
+
+                    'merchant_reference' =>
+                        $merchantReference,
+
+                    'request_payload' =>
+                        $requestPayload,
+                ]);
+
+            $lockedOrder->update([
+                'payment_provider' =>
+                    $provider,
+
+                'payment_status' =>
+                    'unpaid',
             ]);
 
             return $attempt;
@@ -159,39 +243,42 @@ class OrderService
             $providerPaymentId,
             $responsePayload
         ) {
-            $lockedAttempt = PaymentAttempt::query()
-                ->whereKey($attempt->id)
+            /*
+             * Canonical lock order:
+             * Order first, then attempt.
+             */
+            $order = Order::query()
+                ->whereKey($attempt->order_id)
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            $lockedAttempt =
+                PaymentAttempt::query()
+                    ->whereKey($attempt->id)
+                    ->where(
+                        'order_id',
+                        $order->id
+                    )
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
             if ($lockedAttempt->status === 'paid') {
-                return $lockedAttempt;
-            }
-
-            $order = Order::query()
-                ->whereKey($lockedAttempt->order_id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if ($order->payment_status === 'paid') {
-                return $lockedAttempt;
+                return $lockedAttempt->fresh();
             }
 
             $lockedAttempt->update([
                 'status' => 'paid',
-                'provider_payment_id' => $providerPaymentId
-                    ?? $lockedAttempt->provider_payment_id,
-                'response_payload' => $responsePayload,
+
+                'provider_payment_id' =>
+                    $providerPaymentId
+                    ?? $lockedAttempt
+                        ->provider_payment_id,
+
+                'response_payload' =>
+                    $responsePayload,
+
                 'paid_at' => now(),
                 'failed_at' => null,
-            ]);
-
-            $order->update([
-                'payment_status' => 'paid',
-                'status' => 'processing',
-                'fulfillment_status' => 'security_review',
-                'payment_reference' => $providerPaymentId
-                    ?? $lockedAttempt->provider_payment_id,
             ]);
 
             return $lockedAttempt->fresh();
@@ -206,36 +293,43 @@ class OrderService
             $attempt,
             $responsePayload
         ) {
-            $lockedAttempt = PaymentAttempt::query()
-                ->whereKey($attempt->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
             $order = Order::query()
-                ->whereKey($lockedAttempt->order_id)
+                ->whereKey($attempt->order_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if (
-                $lockedAttempt->status === 'paid'
-                || $order->payment_status === 'paid'
-            ) {
-                return $lockedAttempt;
+            $lockedAttempt =
+                PaymentAttempt::query()
+                    ->whereKey($attempt->id)
+                    ->where(
+                        'order_id',
+                        $order->id
+                    )
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+            if ($lockedAttempt->status === 'paid') {
+                return $lockedAttempt->fresh();
             }
 
             if ($lockedAttempt->status === 'failed') {
-                return $lockedAttempt;
+                return $lockedAttempt->fresh();
             }
 
             $lockedAttempt->update([
                 'status' => 'failed',
-                'response_payload' => $responsePayload,
+
+                'response_payload' =>
+                    $responsePayload,
+
                 'failed_at' => now(),
             ]);
 
-            $order->update([
-                'payment_status' => 'failed',
-            ]);
+            if ($order->payment_status !== 'paid') {
+                $order->update([
+                    'payment_status' => 'failed',
+                ]);
+            }
 
             return $lockedAttempt->fresh();
         });
@@ -248,10 +342,15 @@ class OrderService
                 'ORD-' .
                 now()->format('Ymd') .
                 '-' .
-                strtoupper(Str::random(8));
+                strtoupper(
+                    Str::random(8)
+                );
         } while (
             Order::query()
-                ->where('order_number', $orderNumber)
+                ->where(
+                    'order_number',
+                    $orderNumber
+                )
                 ->exists()
         );
 
