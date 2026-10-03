@@ -169,6 +169,41 @@ class SecuritySurfaceTest extends TestCase
                 'Cross-Origin-Opener-Policy',
                 'same-origin'
             );
+
+        $policy =
+            (string) $response->headers->get(
+                'Content-Security-Policy'
+            );
+
+        $this->assertNotSame(
+            '',
+            $policy
+        );
+
+        $this->assertStringContainsString(
+            "default-src 'self'",
+            $policy
+        );
+
+        $this->assertStringContainsString(
+            "base-uri 'self'",
+            $policy
+        );
+
+        $this->assertStringContainsString(
+            "form-action 'self'",
+            $policy
+        );
+
+        $this->assertStringContainsString(
+            "frame-ancestors 'none'",
+            $policy
+        );
+
+        $this->assertStringContainsString(
+            "object-src 'none'",
+            $policy
+        );
     }
 
     private function makeOrder(
