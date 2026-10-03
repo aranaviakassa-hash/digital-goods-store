@@ -125,7 +125,6 @@ class PaymentWebhookController extends Controller
             }
 
             if ($validated['status'] === 'paid') {
-
                 if (
                     $attempt->status === 'paid'
                     || $order->payment_status === 'paid'
@@ -153,7 +152,7 @@ class PaymentWebhookController extends Controller
                     ]
                 );
 
-                $securityReviewService->start(
+                $securityReviewService->startReview(
                     $order->fresh()
                 );
 

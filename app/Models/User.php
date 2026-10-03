@@ -2,15 +2,28 @@
 
 namespace App\Models;
 
+use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthentication;
+use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthenticationRecovery;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthenticationRecovery;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements
+    MustVerifyEmail,
+    FilamentUser,0.0.0.0:5432->5432/tcp
+    HasAppAuthentication,
+    HasAppAuthenticationRecovery
 {
-    use HasFactory, Notifiable;
+    use HasFactory;
+    use Notifiable;
+    use InteractsWithAppAuthentication;
+    use InteractsWithAppAuthenticationRecovery;
 
     protected $fillable = [
         'name',
@@ -28,7 +41,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $panel->getId() === 'admin'
+            && $this->is_admin
+            && $this->hasVerifiedEmail();
     }
 
     public function orders(): HasMany
