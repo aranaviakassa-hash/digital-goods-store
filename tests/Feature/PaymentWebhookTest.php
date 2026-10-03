@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Order;
 use App\Models\PaymentAttempt;
-use App\Models\Refund;
 use App\Models\SecurityReview;
 use App\Models\WebhookEvent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -288,10 +287,6 @@ class PaymentWebhookTest extends TestCase
             'paid'
         )->assertOk();
 
-        /*
-         * Simulate a second provider checkout session
-         * created before the first callback arrived.
-         */
         $attemptTwo =
             PaymentAttempt::create([
                 'order_id' =>
@@ -370,6 +365,161 @@ class PaymentWebhookTest extends TestCase
         );
     }
 
+    public function test_one_decimal_amount_matches_equivalent_two_decimal_amount(): void
+    {
+        [$order, $attempt] =
+            $this->makeUnpaidOrder('10.10');
+
+        $payload =
+            $this->payload(
+                $attempt,
+                'PAYMENT-MONEY-001',
+                'paid'
+            );
+
+        $payload['amount'] = '10.1';
+
+        $this
+            ->withHeader(
+                'X-Webhook-Secret',
+                'test-webhook-secret'
+            )
+            ->postJson(
+                '/webhooks/payment',
+                $payload
+            )
+            ->assertOk();
+
+        $this->assertSame(
+            'paid',
+            $attempt->fresh()->status
+        );
+
+        $this->assertSame(
+            'paid',
+            $order->fresh()->payment_status
+        );
+    }
+
+    public function test_exact_amount_19_99_is_accepted(): void
+    {
+        [$order, $attempt] =
+            $this->makeUnpaidOrder('19.99');
+
+        $this->sendWebhook(
+            $attempt,
+            'PAYMENT-MONEY-002',
+            'paid'
+        )->assertOk();
+
+        $this->assertSame(
+            'paid',
+            $attempt->fresh()->status
+        );
+
+        $this->assertSame(
+            'paid',
+            $order->fresh()->payment_status
+        );
+    }
+
+    public function test_exact_amount_0_29_is_accepted(): void
+    {
+        [$order, $attempt] =
+            $this->makeUnpaidOrder('0.29');
+
+        $this->sendWebhook(
+            $attempt,
+            'PAYMENT-MONEY-003',
+            'paid'
+        )->assertOk();
+
+        $this->assertSame(
+            'paid',
+            $attempt->fresh()->status
+        );
+
+        $this->assertSame(
+            'paid',
+            $order->fresh()->payment_status
+        );
+    }
+
+    public function test_real_cent_difference_is_rejected(): void
+    {
+        [$order, $attempt] =
+            $this->makeUnpaidOrder('10.10');
+
+        $payload =
+            $this->payload(
+                $attempt,
+                'PAYMENT-MONEY-004',
+                'paid'
+            );
+
+        $payload['amount'] = '10.11';
+
+        $this
+            ->withHeader(
+                'X-Webhook-Secret',
+                'test-webhook-secret'
+            )
+            ->postJson(
+                '/webhooks/payment',
+                $payload
+            )
+            ->assertStatus(422);
+
+        $this->assertSame(
+            'initiated',
+            $attempt->fresh()->status
+        );
+
+        $this->assertSame(
+            'unpaid',
+            $order->fresh()->payment_status
+        );
+    }
+
+    public function test_amount_with_more_than_two_decimal_places_is_rejected_by_validation(): void
+    {
+        [$order, $attempt] =
+            $this->makeUnpaidOrder('10.10');
+
+        $payload =
+            $this->payload(
+                $attempt,
+                'PAYMENT-MONEY-005',
+                'paid'
+            );
+
+        $payload['amount'] = '10.100';
+
+        $this
+            ->withHeader(
+                'X-Webhook-Secret',
+                'test-webhook-secret'
+            )
+            ->postJson(
+                '/webhooks/payment',
+                $payload
+            )
+            ->assertStatus(422)
+            ->assertJsonValidationErrors([
+                'amount',
+            ]);
+
+        $this->assertSame(
+            'initiated',
+            $attempt->fresh()->status
+        );
+
+        $this->assertSame(
+            'unpaid',
+            $order->fresh()->payment_status
+        );
+    }
+
     private function sendWebhook(
         PaymentAttempt $attempt,
         string $providerPaymentId,
@@ -416,8 +566,9 @@ class PaymentWebhookTest extends TestCase
         ];
     }
 
-    private function makeUnpaidOrder(): array
-    {
+    private function makeUnpaidOrder(
+        string $amount = '10.00'
+    ): array {
         $order = Order::create([
             'order_number' =>
                 'ORD-TEST-' .
@@ -433,9 +584,14 @@ class PaymentWebhookTest extends TestCase
             'payment_status' => 'unpaid',
             'fulfillment_status' => 'pending',
 
-            'subtotal' => 10,
-            'total' => 10,
-            'currency' => 'AZN',
+            'subtotal' =>
+                $amount,
+
+            'total' =>
+                $amount,
+
+            'currency' =>
+                'AZN',
 
             'customer_email' =>
                 fake()
@@ -455,7 +611,7 @@ class PaymentWebhookTest extends TestCase
                     'initiated',
 
                 'amount' =>
-                    '10.00',
+                    $amount,
 
                 'currency' =>
                     'AZN',
