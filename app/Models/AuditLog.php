@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use LogicException;
 
 class AuditLog extends Model
 {
@@ -21,6 +22,21 @@ class AuditLog extends Model
         return [
             'context' => 'array',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (): void {
+            throw new LogicException(
+                'Audit logs are immutable and cannot be updated.'
+            );
+        });
+
+        static::deleting(function (): void {
+            throw new LogicException(
+                'Audit logs are immutable and cannot be deleted.'
+            );
+        });
     }
 
     public function auditable()
