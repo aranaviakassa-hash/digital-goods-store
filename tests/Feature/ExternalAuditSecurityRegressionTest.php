@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\PaymentAttempt;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\OrderService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -102,7 +103,7 @@ class ExternalAuditSecurityRegressionTest extends TestCase
             'customer_email' => 'replay@example.com',
         ]);
 
-        $attempt = PaymentAttempt::create([
+        PaymentAttempt::create([
             'order_id' => $order->id,
             'provider' => 'test-provider',
             'status' => 'initiated',
@@ -130,10 +131,6 @@ class ExternalAuditSecurityRegressionTest extends TestCase
             'fulfillment_status' => 'fulfilled',
         ])->save();
 
-        /*
-         * Same capture, semantically identical amount, but different JSON
-         * representation/body bytes. This must be a no-op for order state.
-         */
         $payload['amount'] = '10.0';
 
         $this->withHeader('X-Webhook-Secret', 'test-webhook-secret')
@@ -145,6 +142,37 @@ class ExternalAuditSecurityRegressionTest extends TestCase
         $this->assertSame('completed', $order->status);
         $this->assertSame('fulfilled', $order->fulfillment_status);
         $this->assertSame('paid', $order->payment_status);
+    }
+
+    public function test_failed_attempt_does_not_overwrite_refund_pending_order_state(): void
+    {
+        $order = Order::create([
+            'order_number' => 'ORD-REFUND-001',
+            'status' => 'cancelled',
+            'payment_status' => 'refund_pending',
+            'fulfillment_status' => 'pending',
+            'subtotal' => '10.00',
+            'total' => '10.00',
+            'currency' => 'AZN',
+            'customer_email' => 'refund@example.com',
+        ]);
+
+        $attempt = PaymentAttempt::create([
+            'order_id' => $order->id,
+            'provider' => 'test-provider',
+            'status' => 'initiated',
+            'amount' => '10.00',
+            'currency' => 'AZN',
+            'idempotency_key' => 'PAY-REFUND-001',
+            'merchant_reference' => 'MR-REFUND-001',
+        ]);
+
+        app(OrderService::class)->markPaymentFailed($attempt, [
+            'source' => 'regression_test',
+        ]);
+
+        $this->assertSame('failed', $attempt->fresh()->status);
+        $this->assertSame('refund_pending', $order->fresh()->payment_status);
     }
 
     private function sellableProduct(): Product
