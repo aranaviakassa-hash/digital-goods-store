@@ -81,7 +81,7 @@ class SocialAuthController extends Controller
             $googleUser,
             $email,
             $providerUserId
-        ) {
+        ): ?User {
             $socialAccount = SocialAccount::query()
                 ->where('provider', 'google')
                 ->where('provider_user_id', $providerUserId)
@@ -111,9 +111,13 @@ class SocialAuthController extends Controller
                     'email_verified_at' => now(),
                 ])->save();
             } elseif (! $user->hasVerifiedEmail()) {
-                $user->forceFill([
-                    'email_verified_at' => now(),
-                ])->save();
+                /*
+                 * Do not auto-link Google to an unverified local account.
+                 * Otherwise an attacker could pre-register a victim email,
+                 * keep the local password, and wait for the victim's first
+                 * Google login to silently verify/link that same account.
+                 */
+                return null;
             }
 
             SocialAccount::firstOrCreate(
@@ -129,6 +133,22 @@ class SocialAuthController extends Controller
 
             return $user;
         });
+
+        if (! $user) {
+            return redirect()
+                ->route('login')
+                ->withErrors([
+                    'social' => 'An unverified local account already exists for this email. Verify that account or reset its password before linking Google.',
+                ]);
+        }
+
+        if ($user->is_admin) {
+            return redirect()
+                ->route('login')
+                ->withErrors([
+                    'social' => 'Administrator accounts must sign in through the protected admin portal.',
+                ]);
+        }
 
         Auth::login($user, true);
 
