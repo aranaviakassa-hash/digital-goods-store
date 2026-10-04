@@ -73,3 +73,30 @@ body {
         linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
     background-size: 34px 34px;
 }
+
+/*
+ * The hero's compact game shortcuts predate the shared product-visual partial.
+ * Replace their old letter placeholders with publisher-supplied game marks so
+ * the storefront never shows meaningless P/F/M initials.
+ */
+main > section:first-child .h-14.w-14.font-black.text-amber-300,
+main > section:first-child .h-14.w-14.font-black.text-cyan-300,
+main > section:first-child .h-14.w-14.font-black.text-pink-300 {
+    font-size: 0;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 78% auto;
+}
+
+main > section:first-child .h-14.w-14.font-black.text-amber-300 {
+    background-image: url('https://www.pubgmobile.com/images/event/brandassets/down-logo1.png');
+}
+
+main > section:first-child .h-14.w-14.font-black.text-cyan-300 {
+    background-image: url('https://dl.dir.freefiremobile.com/common/web_event/official2.ff.garena.all/20229/ebcec94a33d37c7b957e8a795240f732.jpg');
+    background-size: cover;
+}
+
+main > section:first-child .h-14.w-14.font-black.text-pink-300 {
+    background-image: url('https://en.moonton.com/upload/image/20241226/55fed3965a19e53866d0cf1279460d50.png');
+}
