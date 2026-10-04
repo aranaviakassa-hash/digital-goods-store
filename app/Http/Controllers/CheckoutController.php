@@ -15,7 +15,7 @@ class CheckoutController extends Controller
 {
     public function show(Product $product): View
     {
-        $this->ensureProductIsSellable($product);
+        $this->ensureProductIsPurchasable($product);
 
         return view('store.checkout', [
             'product' => $product,
@@ -27,7 +27,7 @@ class CheckoutController extends Controller
         Product $product,
         OrderService $orderService
     ): RedirectResponse {
-        $this->ensureProductIsSellable($product);
+        $this->ensureProductIsPurchasable($product);
 
         $validated = $request->validate([
             'customer_email' => ['required', 'email', 'max:255'],
@@ -53,13 +53,8 @@ class CheckoutController extends Controller
             $normalizedEmail
         ) {
             $product->refresh();
-            $this->ensureProductIsSellable($product);
+            $this->ensureProductIsPurchasable($product);
 
-            /*
-             * Treat a repeated checkout idempotency key as an immutable replay.
-             * Never let a replay rewrite delivery instructions or policy evidence
-             * on an existing order, especially after payment has started.
-             */
             $existingOrder = Order::query()
                 ->where('idempotency_key', $validated['idempotency_key'])
                 ->lockForUpdate()
@@ -205,8 +200,8 @@ class CheckoutController extends Controller
         return redirect()->route('orders.show', $order);
     }
 
-    private function ensureProductIsSellable(Product $product): void
+    private function ensureProductIsPurchasable(Product $product): void
     {
-        abort_unless($product->isSellable(), 404);
+        abort_unless($product->isPurchasableNow(), 404);
     }
 }
