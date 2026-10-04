@@ -28,6 +28,13 @@ return Application::configure(
     )
     ->withMiddleware(
         function (Middleware $middleware): void {
+            /*
+             * The public review site is exposed through Cloudflare Tunnel while
+             * the Laravel origin remains bound to localhost. Trust forwarded
+             * scheme/host information so Laravel correctly detects public HTTPS.
+             */
+            $middleware->trustProxies(at: '*');
+
             $middleware->web(
                 append: [
                     SetLocale::class,
