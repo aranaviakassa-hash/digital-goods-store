@@ -25,6 +25,7 @@ Route::get('/products/{product:slug}', [StoreController::class, 'product'])
 
 Route::get('/review/checkout/{product:slug}', function (Product $product) {
     abort_if(config('company.live_payment_enabled'), 404);
+    abort_unless($product->catalog_visible, 404);
 
     return view('store.review-checkout', [
         'product' => $product,
