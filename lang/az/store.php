@@ -139,6 +139,18 @@ return [
     'delivery_policy' => 'Çatdırılma Siyasəti',
     'fraud_security' => 'Fırıldaqçılıq və Təhlükəsizlik',
 
+    'product_status_available' => 'Satış üçün aktivdir',
+    'product_fallback_description' => 'PlayCharge kataloqunda təqdim olunan rəqəmsal oyun top-up məhsulu.',
+    'price' => 'Qiymət',
+    'final_price_note' => 'Yekun qiymət məhsul satış üçün aktivləşdirilməzdən əvvəl göstəriləcək.',
+    'delivery' => 'Çatdırılma',
+    'digital_fulfillment' => 'Rəqəmsal fulfillment',
+    'purchase_status' => 'Satış statusu',
+    'checkout_warning' => 'Ödənişdən əvvəl seçilmiş məhsulu və oyun hesabı məlumatlarını diqqətlə yoxla. Uğurlu fulfillment-dən sonra rəqəmsal məhsulların geri qaytarılması mümkün olmaya bilər.',
+    'continue_checkout' => 'Checkout-a davam et',
+    'bank_review_preview' => 'Bank review preview',
+    'bank_review_preview_text' => 'Bu məhsul kataloq və bank baxışı məqsədi ilə görünür. Real checkout yalnız tələb olunan kommersiya, təchizatçı və ödəniş təsdiqləri tamamlandıqdan sonra aktiv ediləcək.',
+
     'footer_text' => 'Rəqəmsal oyun məhsulları və top-up xidmətləri üçün PlayCharge platforması.',
     'operated_by' => 'PlayCharge :company tərəfindən idarə olunur.',
     'trademark_notice' => 'Oyun adları, loqoları və ticarət nişanları müvafiq hüquq sahiblərinə məxsusdur. Açıq şəkildə bildirilmədiyi halda PlayCharge həmin publisher-lərlə tərəfdaşlıq və ya rəsmi əlaqə iddia etmir.',
