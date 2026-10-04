@@ -8,9 +8,13 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'brand_name' => 'NEXORA',
+    'brand_name' => 'PlayCharge',
 
-    'brand_full_name' => 'NEXORA DIGITAL STORE',
+    'brand_full_name' => 'PlayCharge',
+
+    'public_domain' => 'playcharge.online',
+
+    'public_url' => 'https://playcharge.online',
 
     /*
     |--------------------------------------------------------------------------
@@ -43,8 +47,9 @@ return [
     'whatsapp' => '+994504666744',
 
     /*
-     * Domain alınandan sonra yalnız aşağıdakı iki email dəyişəcək.
-     * Hələlik public saytda şəxsi Gmail göstərməyəcəyik.
+     * support@playcharge.online yaradılıb real qəbul testindən keçəndən sonra
+     * aşağıdakı iki email aktiv ediləcək. Hələlik şəxsi Gmail public saytda
+     * göstərilmir və işləməyən korporativ email claim edilmir.
      */
     'email' => null,
 
@@ -118,7 +123,6 @@ return [
 
     'merchant_review_banks' => [
         'ABB',
-        'PAŞA Bank',
     ],
 
     /*
