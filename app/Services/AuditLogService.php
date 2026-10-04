@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AuditLog;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class AuditLogService
 {
@@ -12,6 +13,9 @@ class AuditLogService
         ?Model $auditable = null,
         array $context = []
     ): AuditLog {
+        $actorId = Auth::guard('admin')->id()
+            ?? Auth::guard('web')->id();
+
         return AuditLog::create([
             'event' => $event,
 
@@ -21,7 +25,7 @@ class AuditLogService
 
             'auditable_id' => $auditable?->getKey(),
 
-            'user_id' => auth()->id(),
+            'user_id' => $actorId,
 
             'ip_address' => app()->runningInConsole()
                 ? null
