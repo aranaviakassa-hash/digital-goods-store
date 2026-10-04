@@ -4,7 +4,7 @@
     if (str_contains($name, 'pubg')) {
         $visual = [
             'asset' => 'https://www.pubgmobile.com/images/event/brandassets/down-logo1.png',
-            'alt' => 'PUBG MOBILE official logo',
+            'alt' => 'PUBG MOBILE logo',
             'panel' => 'from-[#2a1b00] via-[#12141c] to-[#080a10]',
             'logoClass' => 'w-[80%] max-w-[520px] max-h-[76%]',
             'frameClass' => '',
@@ -12,7 +12,7 @@
     } elseif (str_contains($name, 'free')) {
         $visual = [
             'asset' => 'https://dl.dir.freefiremobile.com/common/web_event/official2/dist/client/img/full_logo.969f536.png',
-            'alt' => 'FREE FIRE official logo',
+            'alt' => 'FREE FIRE logo',
             'panel' => 'from-[#20160d] via-[#12141c] to-[#080a10]',
             'logoClass' => 'w-[78%] max-w-[520px] max-h-[72%]',
             'frameClass' => '',
@@ -20,7 +20,7 @@
     } elseif (str_contains($name, 'mobile legends')) {
         $visual = [
             'asset' => 'https://en.moonton.com/upload/image/20241226/55fed3965a19e53866d0cf1279460d50.png',
-            'alt' => 'Mobile Legends: Bang Bang official logo',
+            'alt' => 'Mobile Legends: Bang Bang logo',
             'panel' => 'from-[#271800] via-[#12141c] to-[#080a10]',
             'logoClass' => 'w-[86%] max-w-[560px] max-h-[78%]',
             'frameClass' => '',
