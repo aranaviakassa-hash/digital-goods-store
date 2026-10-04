@@ -3,7 +3,7 @@
 @section('content')
 @php
     $locale = app()->getLocale();
-    $isSellable = $product->isSellable();
+    $isPurchasable = $product->isPurchasableNow();
     $categoryKey = strtolower(trim((string) $product->category));
     $category = match($locale) {
         'az' => match($categoryKey) {
@@ -42,7 +42,7 @@
                     {{ $category }}
                 </span>
 
-                @if($isSellable)
+                @if($isPurchasable)
                     <span class="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
                         {{ __('store.product_status_available') }}
                     </span>
@@ -59,7 +59,7 @@
 
             <div class="mt-8">
                 <div class="text-sm text-slate-500">{{ __('store.price') }}</div>
-                @if($product->price !== null)
+                @if($product->price !== null && (float) $product->price > 0)
                     <div class="mt-1 text-4xl font-black">{{ number_format((float) $product->price, 2) }} {{ $product->currency }}</div>
                 @else
                     <div class="mt-2 text-xl font-semibold text-slate-300">{{ __('store.pending_activation') }}</div>
@@ -74,11 +74,11 @@
                 </div>
                 <div class="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                     <div class="text-xs text-slate-500">{{ __('store.purchase_status') }}</div>
-                    <div class="mt-1 text-sm font-medium">{{ $isSellable ? __('store.available') : __('store.review_preview') }}</div>
+                    <div class="mt-1 text-sm font-medium">{{ $isPurchasable ? __('store.available') : __('store.review_preview') }}</div>
                 </div>
             </div>
 
-            @if($isSellable)
+            @if($isPurchasable)
                 <div class="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-sm leading-6 text-amber-100/80">{{ __('store.checkout_warning') }}</div>
                 <a href="{{ route('checkout.show', $product) }}" class="pc-button mt-7 flex items-center justify-center rounded-2xl px-6 py-4 font-semibold text-white transition">{{ __('store.continue_checkout') }}</a>
             @else
