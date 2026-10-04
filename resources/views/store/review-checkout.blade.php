@@ -4,47 +4,50 @@
 @php
     $copy = match(app()->getLocale()) {
         'az' => [
-            'eyebrow' => 'Bank review rejimi',
-            'title' => 'Checkout preview',
-            'intro' => 'Bu səhifə yalnız bank və merchant review üçün müştəri axınını göstərir. Heç bir real ödəniş tutulmur və sifariş yaradılmır.',
+            'eyebrow' => 'Bank baxışı rejimi',
+            'title' => 'Ödəniş mərhələsinin ön görünüşü',
+            'intro' => 'Bu səhifə yalnız bank baxışı üçün müştəri axınını göstərir. Heç bir real ödəniş tutulmur və sifariş yaradılmır.',
             'customer' => 'Müştəri məlumatları',
             'name' => 'Ad və soyad',
-            'email' => 'Email ünvanı',
+            'email' => 'E-poçt ünvanı',
             'game' => 'Oyun hesabı',
-            'player' => 'Player / User ID',
-            'zone' => 'Zone ID',
-            'region' => 'Server / Region',
+            'player' => 'Oyunçu / istifadəçi ID-si',
+            'zone' => 'Zona ID-si',
+            'region' => 'Server / region',
             'summary' => 'Sifariş xülasəsi',
             'product' => 'Məhsul',
             'price' => 'Qiymət',
             'pending' => 'Kommersiya aktivləşməsi gözlənilir',
-            'terms' => 'Şərtlər, Refund Policy və Delivery Policy checkout zamanı qəbul ediləcək.',
-            'button' => 'Test ödənişini davam etdirmək mümkün deyil',
-            'note' => 'ABB acquiring inteqrasiyası və məhsulun kommersiya təsdiqləri tamamlandıqdan sonra real checkout aktiv ediləcək.',
+            'terms' => 'Real sifariş zamanı Şərtlər və Qaydalar, Geri Ödəniş Siyasəti və Çatdırılma Siyasəti ayrıca qəbul ediləcək.',
+            'button' => 'Real ödəniş bu rejimdə mümkün deyil',
+            'note' => 'ABB ekvayrinq inteqrasiyası və tələb olunan kommersiya təsdiqləri tamamlandıqdan sonra real ödəniş mərhələsi aktiv ediləcək.',
             'back' => 'Məhsula qayıt',
+            'optional' => 'İstəyə bağlı',
         ],
         'ru' => [
             'eyebrow' => 'Режим банковской проверки',
-            'title' => 'Предпросмотр checkout',
-            'intro' => 'Эта страница демонстрирует путь клиента только для банковской и merchant-проверки. Реальная оплата не списывается и заказ не создаётся.',
-            'customer' => 'Данные клиента', 'name' => 'Имя и фамилия', 'email' => 'Email',
-            'game' => 'Игровой аккаунт', 'player' => 'Player / User ID', 'zone' => 'Zone ID', 'region' => 'Сервер / Регион',
+            'title' => 'Предпросмотр этапа оплаты',
+            'intro' => 'Эта страница демонстрирует путь клиента только для банковской проверки. Реальная оплата не списывается и заказ не создаётся.',
+            'customer' => 'Данные клиента', 'name' => 'Имя и фамилия', 'email' => 'Электронная почта',
+            'game' => 'Игровой аккаунт', 'player' => 'ID игрока / пользователя', 'zone' => 'ID зоны', 'region' => 'Сервер / регион',
             'summary' => 'Сводка заказа', 'product' => 'Товар', 'price' => 'Цена', 'pending' => 'Ожидает коммерческой активации',
-            'terms' => 'Условия, политика возврата и доставки будут подтверждаться при реальном checkout.',
-            'button' => 'Тестовая оплата недоступна',
-            'note' => 'Реальный checkout будет включён после завершения интеграции ABB acquiring и коммерческих согласований товара.',
+            'terms' => 'При реальном оформлении заказа отдельно подтверждаются Условия использования, Политика возврата и Политика доставки.',
+            'button' => 'Реальная оплата в этом режиме недоступна',
+            'note' => 'Реальный этап оплаты будет включён после завершения интеграции эквайринга ABB и необходимых коммерческих согласований.',
             'back' => 'Вернуться к товару',
+            'optional' => 'Необязательно',
         ],
         default => [
             'eyebrow' => 'Bank review mode', 'title' => 'Checkout preview',
-            'intro' => 'This page demonstrates the customer journey for bank and merchant review only. No real payment is charged and no order is created.',
+            'intro' => 'This page demonstrates the customer journey for bank review only. No real payment is charged and no order is created.',
             'customer' => 'Customer information', 'name' => 'Full name', 'email' => 'Email address',
             'game' => 'Game account', 'player' => 'Player / User ID', 'zone' => 'Zone ID', 'region' => 'Server / Region',
             'summary' => 'Order summary', 'product' => 'Product', 'price' => 'Price', 'pending' => 'Pending commercial activation',
-            'terms' => 'Terms, Refund Policy and Delivery Policy will be accepted during live checkout.',
-            'button' => 'Test payment is not available',
+            'terms' => 'Terms & Conditions, Refund Policy and Delivery Policy will be accepted separately during live checkout.',
+            'button' => 'Real payment is unavailable in review mode',
             'note' => 'Live checkout will be enabled after ABB acquiring integration and the required commercial approvals are complete.',
             'back' => 'Back to product',
+            'optional' => 'Optional',
         ],
     };
 @endphp
@@ -70,8 +73,8 @@
                 <h2 class="text-lg font-bold text-white">{{ $copy['game'] }}</h2>
                 <div class="mt-5 grid gap-5 sm:grid-cols-2">
                     <div class="sm:col-span-2"><label class="text-sm font-medium text-slate-300">{{ $copy['player'] }}</label><input disabled class="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-slate-500" placeholder="123456789"></div>
-                    <div><label class="text-sm font-medium text-slate-300">{{ $copy['zone'] }}</label><input disabled class="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-slate-500" placeholder="Optional"></div>
-                    <div><label class="text-sm font-medium text-slate-300">{{ $copy['region'] }}</label><input disabled class="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-slate-500" placeholder="Optional"></div>
+                    <div><label class="text-sm font-medium text-slate-300">{{ $copy['zone'] }}</label><input disabled class="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-slate-500" placeholder="{{ $copy['optional'] }}"></div>
+                    <div><label class="text-sm font-medium text-slate-300">{{ $copy['region'] }}</label><input disabled class="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-slate-500" placeholder="{{ $copy['optional'] }}"></div>
                 </div>
             </div>
 
