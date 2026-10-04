@@ -7,3 +7,69 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+:root {
+    --pc-bg: #070816;
+    --pc-surface: #101329;
+    --pc-surface-soft: rgba(19, 23, 52, 0.78);
+    --pc-border: rgba(255, 255, 255, 0.10);
+    --pc-text: #f8fafc;
+    --pc-muted: #94a3b8;
+    --pc-violet: #8b5cf6;
+    --pc-fuchsia: #d946ef;
+    --pc-cyan: #22d3ee;
+    --pc-blue: #3b82f6;
+    --pc-lime: #a3e635;
+}
+
+html {
+    background: var(--pc-bg);
+}
+
+body {
+    background:
+        radial-gradient(circle at 12% 8%, rgba(139, 92, 246, 0.16), transparent 28rem),
+        radial-gradient(circle at 88% 16%, rgba(34, 211, 238, 0.12), transparent 30rem),
+        radial-gradient(circle at 55% 90%, rgba(217, 70, 239, 0.10), transparent 34rem),
+        var(--pc-bg);
+}
+
+.pc-brand-gradient {
+    background-image: linear-gradient(110deg, var(--pc-cyan), var(--pc-blue) 32%, var(--pc-violet) 62%, var(--pc-fuchsia));
+}
+
+.pc-brand-text {
+    background-image: linear-gradient(100deg, #67e8f9 0%, #60a5fa 30%, #a78bfa 62%, #f0abfc 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.pc-glow {
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 14px 45px rgba(59, 130, 246, 0.15),
+        0 6px 30px rgba(217, 70, 239, 0.12);
+}
+
+.pc-panel {
+    border: 1px solid var(--pc-border);
+    background: linear-gradient(145deg, rgba(20, 24, 54, 0.88), rgba(10, 12, 30, 0.86));
+    backdrop-filter: blur(18px);
+}
+
+.pc-button {
+    background-image: linear-gradient(110deg, var(--pc-blue), var(--pc-violet) 55%, var(--pc-fuchsia));
+    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.24);
+}
+
+.pc-button:hover {
+    filter: brightness(1.08) saturate(1.08);
+}
+
+.pc-grid-bg {
+    background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 34px 34px;
+}
