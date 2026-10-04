@@ -4,21 +4,22 @@
 
 <section class="relative isolate overflow-hidden">
     <div class="absolute inset-0 -z-20 bg-[#070816]"></div>
-    <div class="absolute inset-0 -z-10 opacity-95" style="background:radial-gradient(circle at 15% 15%,rgba(34,211,238,.18),transparent 30%),radial-gradient(circle at 82% 20%,rgba(124,58,237,.26),transparent 34%),radial-gradient(circle at 75% 78%,rgba(236,72,153,.13),transparent 26%);"></div>
+    <div class="absolute inset-0 -z-10 opacity-95" style="background:radial-gradient(circle at 12% 12%,rgba(34,211,238,.16),transparent 30%),radial-gradient(circle at 82% 18%,rgba(124,58,237,.24),transparent 35%),radial-gradient(circle at 72% 82%,rgba(236,72,153,.10),transparent 28%);"></div>
+    <div class="pointer-events-none absolute left-1/2 top-16 -z-10 h-80 w-80 -translate-x-1/2 rounded-full border border-white/[0.035]"></div>
 
-    <div class="mx-auto grid max-w-7xl items-center gap-14 px-5 py-20 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:py-28">
-        <div>
-            <div class="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/[0.08] px-4 py-2 text-xs font-semibold text-cyan-200">
+    <div class="mx-auto grid max-w-7xl items-center gap-16 px-5 py-20 lg:grid-cols-[1.02fr_.98fr] lg:px-8 lg:py-24 xl:py-28">
+        <div class="max-w-3xl">
+            <div class="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/[0.07] px-4 py-2 text-xs font-semibold text-cyan-200 backdrop-blur">
                 <span class="relative flex h-2 w-2">
-                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50"></span>
+                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-40"></span>
                     <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
                 </span>
                 {{ __('store.hero_badge') }}
             </div>
 
-            <h1 class="mt-7 max-w-4xl text-5xl font-black leading-[.98] tracking-[-0.045em] text-white sm:text-6xl lg:text-7xl">
+            <h1 class="mt-7 max-w-[760px] text-5xl font-black leading-[.96] tracking-[-0.05em] text-white sm:text-6xl lg:text-[4.6rem]">
                 {{ __('store.hero_title_1') }}
-                <span class="block pc-brand-text">{{ __('store.hero_title_2') }}</span>
+                <span class="mt-2 block pc-brand-text">{{ __('store.hero_title_2') }}</span>
             </h1>
 
             <p class="mt-7 max-w-2xl text-base leading-8 text-slate-400 sm:text-lg">
@@ -30,45 +31,60 @@
                     {{ __('store.browse_products') }}
                     <span class="transition group-hover:translate-x-1">→</span>
                 </a>
-                <a href="{{ route('orders.track') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-7 py-4 font-semibold text-slate-200 backdrop-blur transition hover:border-cyan-400/30 hover:bg-white/[0.07]">
+                <a href="{{ route('orders.track') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.035] px-7 py-4 font-semibold text-slate-200 backdrop-blur transition hover:border-cyan-400/30 hover:bg-white/[0.06]">
                     {{ __('store.track_an_order') }}
                 </a>
             </div>
 
-            <div class="mt-10 flex flex-wrap gap-x-7 gap-y-3 text-xs font-medium text-slate-500">
-                <span class="flex items-center gap-2"><span class="text-emerald-400">✓</span>{{ __('store.hero_point_secure') }}</span>
-                <span class="flex items-center gap-2"><span class="text-emerald-400">✓</span>{{ __('store.hero_point_tracking') }}</span>
-                <span class="flex items-center gap-2"><span class="text-emerald-400">✓</span>{{ __('store.hero_point_support') }}</span>
+            <div class="mt-10 grid max-w-2xl gap-3 sm:grid-cols-3">
+                @foreach([
+                    ['✓', __('store.hero_point_secure')],
+                    ['⌁', __('store.hero_point_tracking')],
+                    ['AZ', __('store.hero_point_support')],
+                ] as [$icon, $label])
+                    <div class="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3 text-xs font-medium text-slate-400 backdrop-blur">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.04] text-[10px] font-black text-emerald-300">{{ $icon }}</span>
+                        <span>{{ $label }}</span>
+                    </div>
+                @endforeach
             </div>
         </div>
 
         <div class="relative mx-auto w-full max-w-xl lg:mx-0">
-            <div class="absolute -inset-8 -z-10 rounded-[4rem] bg-gradient-to-br from-violet-600/20 via-cyan-500/10 to-pink-500/20 blur-3xl"></div>
-            <div class="pc-panel relative overflow-hidden rounded-[2rem] p-5 shadow-2xl shadow-black/40">
-                <div class="flex items-center justify-between gap-4">
+            <div class="absolute -inset-10 -z-10 rounded-[4rem] bg-gradient-to-br from-violet-600/18 via-cyan-500/8 to-pink-500/16 blur-3xl"></div>
+            <div class="relative overflow-hidden rounded-[2rem] border border-white/[0.09] bg-[#0D1020]/92 p-5 shadow-2xl shadow-black/45 backdrop-blur-xl sm:p-6">
+                <div class="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-violet-500/[0.07] to-transparent"></div>
+
+                <div class="relative flex items-center justify-between gap-4">
                     <div>
-                        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{{ __('store.trending_now') }}</div>
-                        <div class="mt-1 text-lg font-bold text-white">{{ __('store.game_topups') }}</div>
+                        <div class="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">{{ __('store.trending_now') }}</div>
+                        <div class="mt-2 text-xl font-black tracking-tight text-white">{{ __('store.game_topups') }}</div>
                     </div>
-                    <div class="rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold text-amber-200">
+                    <div class="rounded-full border border-amber-400/20 bg-amber-400/[0.08] px-3 py-1.5 text-[10px] font-semibold text-amber-200">
                         {{ __('store.online') }}
                     </div>
                 </div>
 
-                <div class="mt-5 grid gap-3">
+                <div class="relative mt-6 grid gap-3">
                     @forelse($products->take(3) as $product)
-                        <a href="{{ route('products.show', $product) }}" class="group grid grid-cols-[96px_1fr_auto] items-center gap-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-black/20 p-3 transition hover:border-violet-400/30 hover:bg-white/[0.04]">
-                            <div class="h-20 overflow-hidden rounded-xl border border-white/[0.06] bg-[#0b0e18]">
+                        @php
+                            $categoryLabel = strcasecmp((string) $product->category, 'Direct Top-Up') === 0
+                                ? __('store.direct_topup')
+                                : $product->category;
+                        @endphp
+                        <a href="{{ route('products.show', $product) }}" class="group grid grid-cols-[88px_1fr_auto] items-center gap-4 overflow-hidden rounded-2xl border border-white/[0.07] bg-black/20 p-3 transition hover:border-violet-400/30 hover:bg-white/[0.04]">
+                            <div class="h-20 overflow-hidden rounded-xl border border-white/[0.06] bg-[#090B14]">
                                 @include('store.partials.product-visual', ['product' => $product])
                             </div>
                             <div class="min-w-0">
                                 <div class="truncate font-bold text-white">{{ $product->name }}</div>
-                                <div class="mt-1 text-xs text-slate-500">{{ $product->category }}</div>
-                                <div class="mt-2 inline-flex rounded-full border border-amber-400/15 bg-amber-400/[0.06] px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                                <div class="mt-1 text-xs text-slate-500">{{ $categoryLabel }}</div>
+                                <div class="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-400/15 bg-amber-400/[0.055] px-2.5 py-1 text-[10px] font-semibold text-amber-200">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-amber-300"></span>
                                     {{ $product->isSellable() ? __('store.available') : __('store.review_preview') }}
                                 </div>
                             </div>
-                            <div class="text-lg text-slate-500 transition group-hover:translate-x-1 group-hover:text-white">→</div>
+                            <div class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.025] text-sm text-slate-500 transition group-hover:border-violet-400/20 group-hover:text-white">→</div>
                         </a>
                     @empty
                         <div class="rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-500">
@@ -77,16 +93,22 @@
                     @endforelse
                 </div>
 
-                <div class="mt-5 flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 p-4 text-xs">
-                    <span class="text-slate-500">{{ __('store.delivery_estimate') }}</span>
-                    <span class="font-semibold text-cyan-300">{{ __('store.delivery_1_5_minutes') }}</span>
+                <div class="relative mt-5 grid grid-cols-2 gap-3 text-xs">
+                    <div class="rounded-2xl border border-white/[0.07] bg-black/20 p-4">
+                        <span class="text-slate-500">{{ __('store.delivery_estimate') }}</span>
+                        <div class="mt-1 font-semibold text-cyan-300">{{ __('store.delivery_1_5_minutes') }}</div>
+                    </div>
+                    <div class="rounded-2xl border border-white/[0.07] bg-black/20 p-4">
+                        <span class="text-slate-500">{{ __('store.trust_tracking_title') }}</span>
+                        <div class="mt-1 font-semibold text-violet-300">{{ __('store.trust_tracking_text') }}</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<section class="border-y border-white/[0.07] bg-white/[0.025]">
+<section class="border-y border-white/[0.07] bg-white/[0.02]">
     <div class="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-y divide-white/[0.07] px-5 sm:grid-cols-4 sm:divide-y-0 lg:px-8">
         @foreach([
             ['✓', 'text-emerald-300 bg-emerald-400/10', __('store.trust_secure_title'), __('store.trust_secure_text')],
@@ -119,7 +141,7 @@
             </a>
         </div>
 
-        <div class="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div class="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             @forelse($products as $product)
                 @include('store.partials.home-product-card', ['product' => $product])
             @empty
