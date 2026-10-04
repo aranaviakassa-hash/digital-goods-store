@@ -1,10 +1,22 @@
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}" class="scroll-smooth">
 <head>
+    @php
+        $metaDescription = match(app()->getLocale()) {
+            'az' => 'PlayCharge — rəqəmsal oyun məhsulları və top-up xidmətləri üçün təhlükəsiz və izlənilən platforma.',
+            'ru' => 'PlayCharge — платформа для цифровых игровых товаров и пополнений с защищённым и отслеживаемым процессом.',
+            default => 'PlayCharge — digital gaming products and top-up services with a secure, trackable customer journey.',
+        };
+        $secureCommerce = match(app()->getLocale()) {
+            'az' => 'Qorunan rəqəmsal ticarət',
+            'ru' => 'Защищённая цифровая торговля',
+            default => 'Secure digital commerce',
+        };
+    @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? config('company.brand_full_name') }}</title>
-    <meta name="description" content="PlayCharge — digital gaming products and top-up services.">
+    <meta name="description" content="{{ $metaDescription }}">
     <link rel="icon" type="image/svg+xml" href="{{ asset('brand/playcharge-mark.svg') }}">
     <meta name="theme-color" content="#070816">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -13,11 +25,7 @@
 <header class="sticky top-0 z-50 border-b border-white/10 bg-[#070816]/85 backdrop-blur-2xl">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 lg:px-8">
         <a href="{{ route('home') }}" class="group flex items-center gap-3" aria-label="PlayCharge home">
-            <img
-                src="{{ asset('brand/playcharge-logo.svg') }}"
-                alt="PlayCharge"
-                class="h-10 w-auto max-w-[190px] transition duration-300 group-hover:scale-[1.015]"
-            >
+            <img src="{{ asset('brand/playcharge-logo.svg') }}" alt="PlayCharge" class="h-10 w-auto max-w-[190px] transition duration-300 group-hover:scale-[1.015]">
         </a>
 
         <nav class="hidden items-center gap-7 text-sm text-slate-300 md:flex">
@@ -30,10 +38,7 @@
         <div class="flex items-center gap-3">
             <div class="hidden items-center gap-1 rounded-xl border border-white/10 bg-white/[0.035] p-1 sm:flex">
                 @foreach(['az' => 'AZ', 'en' => 'EN', 'ru' => 'RU'] as $locale => $label)
-                    <a
-                        href="{{ route('locale.update', $locale) }}"
-                        class="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition {{ app()->getLocale() === $locale ? 'pc-brand-gradient text-white' : 'text-slate-400 hover:text-white' }}"
-                    >{{ $label }}</a>
+                    <a href="{{ route('locale.update', $locale) }}" class="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition {{ app()->getLocale() === $locale ? 'pc-brand-gradient text-white' : 'text-slate-400 hover:text-white' }}">{{ $label }}</a>
                 @endforeach
             </div>
 
@@ -41,9 +46,7 @@
                 <a href="{{ route('account.index') }}" class="hidden text-sm text-slate-300 transition hover:text-white lg:inline">{{ __('store.my_account') }}</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-slate-200 transition hover:bg-white/[0.08]">
-                        {{ __('store.logout') }}
-                    </button>
+                    <button type="submit" class="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-slate-200 transition hover:bg-white/[0.08]">{{ __('store.logout') }}</button>
                 </form>
             @else
                 <a href="{{ route('login') }}" class="hidden rounded-xl px-4 py-2 text-sm text-slate-300 transition hover:text-white sm:block">{{ __('store.login') }}</a>
@@ -61,35 +64,26 @@
             </div>
             <div class="flex items-center gap-1">
                 @foreach(['az' => 'AZ', 'en' => 'EN', 'ru' => 'RU'] as $locale => $label)
-                    <a
-                        href="{{ route('locale.update', $locale) }}"
-                        class="rounded-md px-2 py-1 text-[11px] {{ app()->getLocale() === $locale ? 'pc-brand-gradient text-white' : 'text-slate-500' }}"
-                    >{{ $label }}</a>
+                    <a href="{{ route('locale.update', $locale) }}" class="rounded-md px-2 py-1 text-[11px] {{ app()->getLocale() === $locale ? 'pc-brand-gradient text-white' : 'text-slate-500' }}">{{ $label }}</a>
                 @endforeach
             </div>
         </div>
     </div>
 </header>
 
-<main class="min-h-[70vh]">
-    @yield('content')
-</main>
+<main class="min-h-[70vh]">@yield('content')</main>
 
 <footer class="border-t border-white/10 bg-[#070816]/92 backdrop-blur-xl">
     <div class="mx-auto grid max-w-7xl gap-10 px-5 py-14 md:grid-cols-4 lg:px-8">
         <div class="md:col-span-2">
             <img src="{{ asset('brand/playcharge-logo.svg') }}" alt="PlayCharge" class="h-11 w-auto max-w-[210px]">
-            <p class="mt-5 max-w-md text-sm leading-6 text-slate-400">
-                {{ __('store.footer_text') }}
-            </p>
+            <p class="mt-5 max-w-md text-sm leading-6 text-slate-400">{{ __('store.footer_text') }}</p>
             <div class="mt-5 space-y-1 text-xs leading-5 text-slate-500">
                 <div>{{ __('store.operated_by', ['company' => config('company.legal_short_name')]) }}</div>
                 <div>{{ __('store.tax_id') }}: {{ config('company.tax_id') }}</div>
                 <div>{{ config('company.legal_address') }}</div>
                 <div>{{ __('store.phone') }}: {{ config('company.phone_display') }}</div>
-                @if(config('company.support_email'))
-                    <div>Email: {{ config('company.support_email') }}</div>
-                @endif
+                @if(config('company.support_email'))<div>Email: {{ config('company.support_email') }}</div>@endif
             </div>
         </div>
 
@@ -117,12 +111,10 @@
 
     <div class="border-t border-white/10">
         <div class="mx-auto max-w-7xl px-5 py-6 lg:px-8">
-            <p class="max-w-5xl text-[11px] leading-5 text-slate-600">
-                {{ __('store.trademark_notice') }}
-            </p>
+            <p class="max-w-5xl text-[11px] leading-5 text-slate-600">{{ __('store.trademark_notice') }}</p>
             <div class="mt-4 flex flex-col gap-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
                 <span>© {{ date('Y') }} {{ config('company.brand_full_name') }}.</span>
-                <span>{{ config('company.public_domain') }} • Secure digital commerce • AZN</span>
+                <span>{{ config('company.public_domain') }} • {{ $secureCommerce }} • AZN</span>
             </div>
         </div>
     </div>
