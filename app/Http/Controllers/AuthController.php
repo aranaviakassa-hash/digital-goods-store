@@ -39,6 +39,21 @@ class AuthController extends Controller
                 ->onlyInput('email');
         }
 
+        /** @var User $user */
+        $user = Auth::user();
+
+        if ($user->is_admin) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()
+                ->withErrors([
+                    'email' => 'Administrator accounts must sign in through the protected admin portal.',
+                ])
+                ->onlyInput('email');
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('account.index'));
