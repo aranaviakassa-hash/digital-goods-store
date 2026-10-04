@@ -40,10 +40,10 @@ class ProductForm
 
                 TextInput::make('price')
                     ->numeric()
-                    ->minValue(0)
+                    ->minValue(0.01)
                     ->prefix('AZN')
                     ->helperText(
-                        'May be left blank for review-only catalogue products. A live sellable product must have a price.'
+                        'May be left blank for review-only catalogue products. A live sellable product must have a positive price.'
                     ),
 
                 TextInput::make('currency')
@@ -69,14 +69,14 @@ class ProductForm
                     ->label('Resale verified')
                     ->default(false)
                     ->helperText(
-                        'Enable only after the commercial/resale basis has been verified.'
+                        'Enable only after the commercial/resale basis has been verified and documented.'
                     ),
 
                 Toggle::make('bank_approved')
                     ->label('Bank approved')
                     ->default(false)
                     ->helperText(
-                        'Enable only after merchant/acquiring approval permits live sale.'
+                        'Enable only after merchant/acquiring approval permits live sale and the approval is documented.'
                     ),
 
                 Textarea::make('description')
