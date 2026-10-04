@@ -48,10 +48,6 @@ class SecurityHeaders
             "'self'",
         ];
 
-        /*
-         * Laravel Vite development server compatibility.
-         * Production remains limited to same-origin resources.
-         */
         if (! app()->environment('production')) {
             $scriptSources[] = 'http://127.0.0.1:5173';
             $scriptSources[] = 'http://localhost:5173';
@@ -68,7 +64,7 @@ class SecurityHeaders
             "form-action 'self'",
             "frame-ancestors 'none'",
             "object-src 'none'",
-            "img-src 'self' data: blob: https:",
+            "img-src 'self' data: blob:",
             "font-src 'self' data:",
             "style-src 'self' 'unsafe-inline'",
             'script-src ' . implode(' ', $scriptSources),
