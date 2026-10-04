@@ -139,6 +139,18 @@ return [
     'delivery_policy' => 'Delivery Policy',
     'fraud_security' => 'Fraud & Security',
 
+    'product_status_available' => 'Available for purchase',
+    'product_fallback_description' => 'Digital gaming top-up product presented through the PlayCharge catalogue.',
+    'price' => 'Price',
+    'final_price_note' => 'Final pricing will be displayed before this product is activated for purchase.',
+    'delivery' => 'Delivery',
+    'digital_fulfillment' => 'Digital fulfillment',
+    'purchase_status' => 'Purchase status',
+    'checkout_warning' => 'Please verify the selected product and game-account information before payment. Digital products may become irreversible after successful fulfillment.',
+    'continue_checkout' => 'Continue to checkout',
+    'bank_review_preview' => 'Bank review preview',
+    'bank_review_preview_text' => 'This item is visible for catalogue and bank-review purposes. Live checkout will only be enabled after the required commercial, supplier and payment approvals are complete.',
+
     'footer_text' => 'PlayCharge platform for digital gaming products and top-up services.',
     'operated_by' => 'PlayCharge is operated by :company.',
     'trademark_notice' => 'Game names, logos and trademarks belong to their respective owners. Unless expressly stated, PlayCharge does not claim partnership, endorsement or official affiliation with those publishers.',
