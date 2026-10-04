@@ -15,7 +15,7 @@
 
     <meta
         name="description"
-        content="NEXORA — rəqəmsal oyun məhsulları və top-up xidmətləri üçün təhlükəsiz onlayn mağaza."
+        content="PlayCharge — rəqəmsal oyun məhsulları və top-up xidmətləri üçün təhlükəsiz onlayn mağaza."
     >
 
     @vite([
@@ -24,27 +24,27 @@
     ])
 </head>
 
-<body class="min-h-screen bg-slate-950 text-white antialiased">
+<body class="min-h-screen text-white antialiased pc-grid-bg">
 
-<header class="sticky top-0 z-50 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl">
+<header class="sticky top-0 z-50 border-b border-white/10 bg-[#070816]/85 backdrop-blur-2xl">
 
     <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
 
         <a
             href="{{ route('home') }}"
-            class="flex items-center gap-3"
+            class="group flex items-center gap-3"
         >
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 font-black shadow-lg shadow-violet-600/20">
-                N
+            <div class="pc-brand-gradient pc-glow flex h-11 w-11 items-center justify-center rounded-2xl font-black text-white transition duration-300 group-hover:scale-105">
+                P
             </div>
 
             <div>
-                <div class="text-lg font-bold tracking-tight">
+                <div class="pc-brand-text text-lg font-black tracking-tight">
                     {{ config('company.brand_name') }}
                 </div>
 
-                <div class="text-[10px] uppercase tracking-[0.22em] text-slate-500">
-                    Digital Store
+                <div class="text-[10px] uppercase tracking-[0.24em] text-slate-500">
+                    Digital Gaming Store
                 </div>
             </div>
         </a>
@@ -53,28 +53,28 @@
 
             <a
                 href="{{ route('products.index') }}"
-                class="transition hover:text-white"
+                class="transition hover:text-cyan-300"
             >
                 {{ __('store.products') }}
             </a>
 
             <a
                 href="{{ route('orders.track') }}"
-                class="transition hover:text-white"
+                class="transition hover:text-violet-300"
             >
                 {{ __('store.track_order') }}
             </a>
 
             <a
                 href="{{ route('help.index') }}"
-                class="transition hover:text-white"
+                class="transition hover:text-fuchsia-300"
             >
                 {{ __('store.help') }}
             </a>
 
             <a
                 href="{{ route('contact') }}"
-                class="transition hover:text-white"
+                class="transition hover:text-blue-300"
             >
                 {{ __('store.support') }}
             </a>
@@ -83,13 +83,13 @@
 
         <div class="flex items-center gap-3">
 
-            <div class="hidden items-center gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1 sm:flex">
+            <div class="hidden items-center gap-1 rounded-xl border border-white/10 bg-white/[0.035] p-1 sm:flex">
 
                 <a
                     href="{{ route('locale.update', 'az') }}"
                     class="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition
                     {{ app()->getLocale() === 'az'
-                        ? 'bg-violet-600 text-white'
+                        ? 'pc-brand-gradient text-white'
                         : 'text-slate-400 hover:text-white' }}"
                 >
                     AZ
@@ -99,7 +99,7 @@
                     href="{{ route('locale.update', 'en') }}"
                     class="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition
                     {{ app()->getLocale() === 'en'
-                        ? 'bg-violet-600 text-white'
+                        ? 'pc-brand-gradient text-white'
                         : 'text-slate-400 hover:text-white' }}"
                 >
                     EN
@@ -109,7 +109,7 @@
                     href="{{ route('locale.update', 'ru') }}"
                     class="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition
                     {{ app()->getLocale() === 'ru'
-                        ? 'bg-violet-600 text-white'
+                        ? 'pc-brand-gradient text-white'
                         : 'text-slate-400 hover:text-white' }}"
                 >
                     RU
@@ -134,7 +134,7 @@
 
                     <button
                         type="submit"
-                        class="rounded-xl border border-white/10 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/5"
+                        class="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-slate-200 transition hover:bg-white/[0.08]"
                     >
                         {{ __('store.logout') }}
                     </button>
@@ -151,7 +151,7 @@
 
                 <a
                     href="{{ route('register') }}"
-                    class="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-violet-600/20 transition hover:bg-violet-500"
+                    class="pc-button rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
                 >
                     {{ __('store.create_account') }}
                 </a>
@@ -188,7 +188,7 @@
                     href="{{ route('locale.update', 'az') }}"
                     class="rounded-md px-2 py-1 text-[11px]
                     {{ app()->getLocale() === 'az'
-                        ? 'bg-violet-600 text-white'
+                        ? 'pc-brand-gradient text-white'
                         : 'text-slate-500' }}"
                 >
                     AZ
@@ -198,7 +198,7 @@
                     href="{{ route('locale.update', 'en') }}"
                     class="rounded-md px-2 py-1 text-[11px]
                     {{ app()->getLocale() === 'en'
-                        ? 'bg-violet-600 text-white'
+                        ? 'pc-brand-gradient text-white'
                         : 'text-slate-500' }}"
                 >
                     EN
@@ -208,7 +208,7 @@
                     href="{{ route('locale.update', 'ru') }}"
                     class="rounded-md px-2 py-1 text-[11px]
                     {{ app()->getLocale() === 'ru'
-                        ? 'bg-violet-600 text-white'
+                        ? 'pc-brand-gradient text-white'
                         : 'text-slate-500' }}"
                 >
                     RU
@@ -226,7 +226,7 @@
     @yield('content')
 </main>
 
-<footer class="border-t border-white/10 bg-slate-950">
+<footer class="border-t border-white/10 bg-[#070816]/92 backdrop-blur-xl">
 
     <div class="mx-auto grid max-w-7xl gap-10 px-5 py-14 md:grid-cols-4 lg:px-8">
 
@@ -234,17 +234,17 @@
 
             <div class="flex items-center gap-3">
 
-                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 font-black">
-                    N
+                <div class="pc-brand-gradient pc-glow flex h-10 w-10 items-center justify-center rounded-xl font-black">
+                    P
                 </div>
 
                 <div>
-                    <div class="font-bold">
+                    <div class="pc-brand-text font-black">
                         {{ config('company.brand_full_name') }}
                     </div>
 
                     <div class="text-xs text-slate-500">
-                        Secure digital gaming commerce
+                        Fast, secure digital gaming commerce
                     </div>
                 </div>
 
@@ -259,7 +259,7 @@
             <div class="mt-5 space-y-1 text-xs leading-5 text-slate-500">
 
                 <div>
-                    {{ config('company.legal_short_name') }}
+                    PlayCharge, {{ config('company.legal_short_name') }} tərəfindən idarə olunur.
                 </div>
 
                 <div>
@@ -276,6 +276,13 @@
                     {{ config('company.phone_display') }}
                 </div>
 
+                @if(config('company.support_email'))
+                    <div>
+                        Email:
+                        {{ config('company.support_email') }}
+                    </div>
+                @endif
+
             </div>
 
         </div>
@@ -290,28 +297,28 @@
 
                 <a
                     href="{{ route('products.index') }}"
-                    class="hover:text-white"
+                    class="hover:text-cyan-300"
                 >
                     {{ __('store.products') }}
                 </a>
 
                 <a
                     href="{{ route('orders.track') }}"
-                    class="hover:text-white"
+                    class="hover:text-violet-300"
                 >
                     {{ __('store.track_order') }}
                 </a>
 
                 <a
                     href="{{ route('help.index') }}"
-                    class="hover:text-white"
+                    class="hover:text-fuchsia-300"
                 >
                     {{ __('store.help_center') }}
                 </a>
 
                 <a
                     href="{{ route('contact') }}"
-                    class="hover:text-white"
+                    class="hover:text-blue-300"
                 >
                     {{ __('store.support') }}
                 </a>
@@ -328,23 +335,23 @@
 
             <div class="mt-4 flex flex-col gap-3 text-sm text-slate-400">
 
-                <a href="{{ route('legal.terms') }}">
+                <a class="hover:text-white" href="{{ route('legal.terms') }}">
                     {{ __('store.terms') }}
                 </a>
 
-                <a href="{{ route('legal.privacy') }}">
+                <a class="hover:text-white" href="{{ route('legal.privacy') }}">
                     {{ __('store.privacy') }}
                 </a>
 
-                <a href="{{ route('legal.refund') }}">
+                <a class="hover:text-white" href="{{ route('legal.refund') }}">
                     {{ __('store.refund') }}
                 </a>
 
-                <a href="{{ route('legal.delivery') }}">
+                <a class="hover:text-white" href="{{ route('legal.delivery') }}">
                     {{ __('store.delivery_policy') }}
                 </a>
 
-                <a href="{{ route('legal.security') }}">
+                <a class="hover:text-white" href="{{ route('legal.security') }}">
                     {{ __('store.fraud_security') }}
                 </a>
 
@@ -364,7 +371,7 @@
             </span>
 
             <span>
-                Secure digital commerce • AZN
+                {{ config('company.public_domain') }} • Secure digital commerce • AZN
             </span>
 
         </div>
