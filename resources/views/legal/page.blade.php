@@ -8,6 +8,18 @@
     $page =
         config("legal.pages.{$pageKey}.{$locale}")
         ?? config("legal.pages.{$pageKey}.az");
+
+    $operatorText = match($locale) {
+        'az' => 'PlayCharge, "NEXORA DİGİTAL STORE" MMC tərəfindən idarə olunan rəqəmsal ticarət brendidir.',
+        'ru' => 'PlayCharge — бренд цифровой торговли, управляемый ООО «NEXORA DIGITAL STORE».',
+        default => 'PlayCharge is a digital commerce brand operated by NEXORA DIGITAL STORE LLC.',
+    };
+
+    $reviewNotice = match($locale) {
+        'az' => 'Hazırkı public versiya bank və merchant baxışı üçündür. Canlı ödəniş və real rəqəmsal çatdırılma aktiv deyil; çatdırılma müddətləri xidmət kommersiya baxımından aktivləşdirildikdən sonrakı hədəflərdir.',
+        'ru' => 'Текущая публичная версия предназначена для банковской и merchant-проверки. Реальные платежи и цифровая доставка не активированы; сроки доставки являются целевыми после коммерческой активации сервиса.',
+        default => 'The current public version is for bank and merchant review. Live payments and real digital fulfillment are not active; delivery timeframes are service targets for after commercial activation.',
+    };
 @endphp
 
 <section class="relative overflow-hidden">
@@ -39,7 +51,17 @@
                 {{ $page['intro'] }}
             </p>
 
-            <div class="mt-5 text-xs text-slate-600">
+            <p class="mt-4 text-sm font-medium leading-7 text-slate-300">
+                {{ $operatorText }}
+            </p>
+
+            @if(!config('company.live_payment_enabled'))
+                <div class="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] px-5 py-4 text-sm leading-6 text-amber-100/80">
+                    {{ $reviewNotice }}
+                </div>
+            @endif
+
+            <div class="mt-5 text-xs text-slate-500">
                 {{ app()->getLocale() === 'az'
                     ? 'Son yenilənmə'
                     : (app()->getLocale() === 'ru'
@@ -84,7 +106,7 @@
                 {{ config('company.legal_short_name') }}
             </div>
 
-            <div class="mt-3 grid gap-2 text-xs leading-5 text-slate-500 sm:grid-cols-3">
+            <div class="mt-3 grid gap-2 text-xs leading-5 text-slate-400 sm:grid-cols-3">
 
                 <div>
                     VÖEN: {{ config('company.tax_id') }}
