@@ -2,7 +2,8 @@
 
 @section('content')
 @php
-    $copy = match(app()->getLocale()) {
+    $locale = app()->getLocale();
+    $copy = match($locale) {
         'az' => [
             'account' => 'Hesab', 'welcome' => 'Xoş gəldin', 'verified' => 'Email təsdiqlənib',
             'orders' => 'Sifarişlərim', 'orders_text' => 'Son sifarişlərin və cari statusları.', 'shop' => 'Məhsullara bax',
@@ -21,6 +22,18 @@
             'order_number' => 'Order number', 'payment' => 'Payment', 'delivery' => 'Delivery', 'total' => 'Total',
             'empty' => 'No orders yet', 'empty_text' => 'Your orders will appear here.',
         ],
+    };
+
+    $paymentLabels = match($locale) {
+        'az' => ['unpaid' => 'Ödənilməyib', 'pending' => 'Gözlənilir', 'paid' => 'Ödənilib', 'failed' => 'Uğursuz', 'refund_pending' => 'Geri ödəniş gözlənilir', 'refunded' => 'Geri ödənilib'],
+        'ru' => ['unpaid' => 'Не оплачено', 'pending' => 'Ожидается', 'paid' => 'Оплачено', 'failed' => 'Ошибка', 'refund_pending' => 'Возврат ожидается', 'refunded' => 'Возвращено'],
+        default => ['unpaid' => 'Unpaid', 'pending' => 'Pending', 'paid' => 'Paid', 'failed' => 'Failed', 'refund_pending' => 'Refund pending', 'refunded' => 'Refunded'],
+    };
+
+    $fulfillmentLabels = match($locale) {
+        'az' => ['pending' => 'Gözlənilir', 'security_review' => 'Təhlükəsizlik yoxlaması', 'processing' => 'Emal olunur', 'unknown' => 'Əl ilə yoxlama', 'fulfilled' => 'Çatdırılıb', 'failed' => 'Uğursuz'],
+        'ru' => ['pending' => 'Ожидается', 'security_review' => 'Проверка безопасности', 'processing' => 'Обрабатывается', 'unknown' => 'Ручная проверка', 'fulfilled' => 'Доставлено', 'failed' => 'Ошибка'],
+        default => ['pending' => 'Pending', 'security_review' => 'Security review', 'processing' => 'Processing', 'unknown' => 'Manual review', 'fulfilled' => 'Delivered', 'failed' => 'Failed'],
     };
 @endphp
 
@@ -59,8 +72,8 @@
                             </div>
                         </div>
                         <div class="grid grid-cols-3 gap-6 text-sm">
-                            <div><div class="text-xs text-slate-500">{{ $copy['payment'] }}</div><div class="mt-1 font-medium text-slate-200">{{ ucfirst($order->payment_status) }}</div></div>
-                            <div><div class="text-xs text-slate-500">{{ $copy['delivery'] }}</div><div class="mt-1 font-medium text-slate-200">{{ ucfirst(str_replace('_', ' ', $order->fulfillment_status)) }}</div></div>
+                            <div><div class="text-xs text-slate-500">{{ $copy['payment'] }}</div><div class="mt-1 font-medium text-slate-200">{{ $paymentLabels[$order->payment_status] ?? ucfirst(str_replace('_', ' ', $order->payment_status)) }}</div></div>
+                            <div><div class="text-xs text-slate-500">{{ $copy['delivery'] }}</div><div class="mt-1 font-medium text-slate-200">{{ $fulfillmentLabels[$order->fulfillment_status] ?? ucfirst(str_replace('_', ' ', $order->fulfillment_status)) }}</div></div>
                             <div><div class="text-xs text-slate-500">{{ $copy['total'] }}</div><div class="mt-1 font-bold text-white">{{ number_format($order->total, 2) }} {{ $order->currency }}</div></div>
                         </div>
                     </div>
