@@ -1,6 +1,9 @@
 @php
     $name = strtolower($product->name);
     $isSellable = $product->isSellable();
+    $categoryLabel = strcasecmp((string) $product->category, 'Direct Top-Up') === 0
+        ? __('store.direct_topup')
+        : $product->category;
 
     $style = str_contains($name, 'pubg')
         ? [
@@ -34,7 +37,7 @@
     <div class="p-6">
         <div class="flex items-center justify-between gap-4">
             <span class="rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider {{ $style['badge'] }}">
-                {{ $product->category }}
+                {{ $categoryLabel }}
             </span>
 
             @if($isSellable)
