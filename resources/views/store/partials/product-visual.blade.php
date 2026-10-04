@@ -6,23 +6,23 @@
             'asset' => 'https://www.pubgmobile.com/images/event/brandassets/down-logo1.png',
             'alt' => 'PUBG MOBILE official logo',
             'panel' => 'from-[#2a1b00] via-[#12141c] to-[#080a10]',
-            'logoClass' => 'w-[76%] max-w-[460px] max-h-[72%]',
+            'logoClass' => 'w-[80%] max-w-[520px] max-h-[76%]',
             'frameClass' => '',
         ];
     } elseif (str_contains($name, 'free')) {
         $visual = [
-            'asset' => 'https://dl.dir.freefiremobile.com/common/web_event/official2.ff.garena.all/20229/ebcec94a33d37c7b957e8a795240f732.jpg',
+            'asset' => 'https://dl.dir.freefiremobile.com/common/web_event/official2/dist/client/img/full_logo.969f536.png',
             'alt' => 'FREE FIRE official logo',
-            'panel' => 'from-[#444444] via-[#343434] to-[#272727]',
-            'logoClass' => 'w-[84%] max-w-[520px] max-h-[78%] scale-[1.08]',
-            'frameClass' => 'rounded-xl shadow-2xl shadow-black/35',
+            'panel' => 'from-[#20160d] via-[#12141c] to-[#080a10]',
+            'logoClass' => 'w-[78%] max-w-[520px] max-h-[72%]',
+            'frameClass' => '',
         ];
     } elseif (str_contains($name, 'mobile legends')) {
         $visual = [
             'asset' => 'https://en.moonton.com/upload/image/20241226/55fed3965a19e53866d0cf1279460d50.png',
             'alt' => 'Mobile Legends: Bang Bang official logo',
             'panel' => 'from-[#271800] via-[#12141c] to-[#080a10]',
-            'logoClass' => 'w-[82%] max-w-[520px] max-h-[74%]',
+            'logoClass' => 'w-[86%] max-w-[560px] max-h-[78%]',
             'frameClass' => '',
         ];
     } else {
@@ -38,7 +38,7 @@
 
 <div class="relative h-full w-full overflow-hidden bg-gradient-to-br {{ $visual['panel'] }}">
     <div
-        class="absolute inset-0 opacity-[0.16]"
+        class="absolute inset-0 opacity-[0.14]"
         style="background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:32px 32px;"
     ></div>
 
