@@ -2,15 +2,26 @@
 <html lang="{{ app()->getLocale() }}" class="scroll-smooth">
 <head>
     @php
-        $metaDescription = match(app()->getLocale()) {
+        $locale = app()->getLocale();
+        $metaDescription = match($locale) {
             'az' => 'PlayCharge — rəqəmsal oyun məhsulları və top-up xidmətləri üçün təhlükəsiz və izlənilən platforma.',
             'ru' => 'PlayCharge — платформа для цифровых игровых товаров и пополнений с защищённым и отслеживаемым процессом.',
             default => 'PlayCharge — digital gaming products and top-up services with a secure, trackable customer journey.',
         };
-        $secureCommerce = match(app()->getLocale()) {
+        $secureCommerce = match($locale) {
             'az' => 'Qorunan rəqəmsal ticarət',
             'ru' => 'Защищённая цифровая торговля',
             default => 'Secure digital commerce',
+        };
+        $reviewTitle = match($locale) {
+            'az' => 'Merchant review rejimi',
+            'ru' => 'Режим merchant review',
+            default => 'Merchant review mode',
+        };
+        $reviewText = match($locale) {
+            'az' => 'Sayt ABB merchant/acquiring yoxlaması üçün non-transactional preview rejimindədir. Real kart ödənişi aktiv deyil.',
+            'ru' => 'Сайт работает в режиме non-transactional preview для merchant/acquiring проверки ABB. Реальные карточные платежи не активны.',
+            default => 'This site is in non-transactional preview mode for ABB merchant/acquiring review. Live card payments are not enabled.',
         };
     @endphp
     <meta charset="UTF-8">
@@ -22,6 +33,15 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen text-white antialiased pc-grid-bg">
+@if(!config('company.live_payment_enabled'))
+    <div class="border-b border-amber-300/20 bg-amber-300/[0.08]">
+        <div class="mx-auto flex max-w-7xl items-start gap-3 px-5 py-2.5 text-[11px] leading-5 text-amber-100/90 lg:px-8 sm:items-center sm:text-xs">
+            <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-amber-300/25 bg-amber-300/10 text-[10px] font-black text-amber-200 sm:mt-0">!</span>
+            <p><strong class="font-black text-amber-100">{{ $reviewTitle }}:</strong> {{ $reviewText }}</p>
+        </div>
+    </div>
+@endif
+
 <header class="sticky top-0 z-50 border-b border-white/10 bg-[#070816]/85 backdrop-blur-2xl">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 lg:px-8">
         <a href="{{ route('home') }}" class="group flex items-center gap-3" aria-label="PlayCharge home">
@@ -37,8 +57,8 @@
 
         <div class="flex items-center gap-3">
             <div class="hidden items-center gap-1 rounded-xl border border-white/10 bg-white/[0.035] p-1 sm:flex">
-                @foreach(['az' => 'AZ', 'en' => 'EN', 'ru' => 'RU'] as $locale => $label)
-                    <a href="{{ route('locale.update', $locale) }}" class="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition {{ app()->getLocale() === $locale ? 'pc-brand-gradient text-white' : 'text-slate-400 hover:text-white' }}">{{ $label }}</a>
+                @foreach(['az' => 'AZ', 'en' => 'EN', 'ru' => 'RU'] as $localeCode => $label)
+                    <a href="{{ route('locale.update', $localeCode) }}" class="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition {{ app()->getLocale() === $localeCode ? 'pc-brand-gradient text-white' : 'text-slate-400 hover:text-white' }}">{{ $label }}</a>
                 @endforeach
             </div>
 
@@ -57,14 +77,15 @@
 
     <div class="border-t border-white/5 px-5 py-3 sm:hidden">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
-            <div class="flex gap-4 text-sm text-slate-400">
+            <div class="flex min-w-0 gap-4 overflow-x-auto whitespace-nowrap text-sm text-slate-400 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <a href="{{ route('products.index') }}">{{ __('store.products') }}</a>
                 <a href="{{ route('orders.track') }}">{{ __('store.track_order') }}</a>
                 <a href="{{ route('help.index') }}">{{ __('store.help') }}</a>
+                <a href="{{ route('contact') }}">{{ __('store.support') }}</a>
             </div>
-            <div class="flex items-center gap-1">
-                @foreach(['az' => 'AZ', 'en' => 'EN', 'ru' => 'RU'] as $locale => $label)
-                    <a href="{{ route('locale.update', $locale) }}" class="rounded-md px-2 py-1 text-[11px] {{ app()->getLocale() === $locale ? 'pc-brand-gradient text-white' : 'text-slate-500' }}">{{ $label }}</a>
+            <div class="flex shrink-0 items-center gap-1">
+                @foreach(['az' => 'AZ', 'en' => 'EN', 'ru' => 'RU'] as $localeCode => $label)
+                    <a href="{{ route('locale.update', $localeCode) }}" class="rounded-md px-2 py-1 text-[11px] {{ app()->getLocale() === $localeCode ? 'pc-brand-gradient text-white' : 'text-slate-500' }}">{{ $label }}</a>
                 @endforeach
             </div>
         </div>
@@ -78,9 +99,9 @@
         <div class="md:col-span-2">
             <img src="{{ asset('brand/playcharge-logo.svg') }}" alt="PlayCharge" class="h-11 w-auto max-w-[210px]">
             <p class="mt-5 max-w-md text-sm leading-6 text-slate-400">{{ __('store.footer_text') }}</p>
-            <div class="mt-5 space-y-1 text-xs leading-5 text-slate-500">
-                <div>{{ __('store.operated_by', ['company' => config('company.legal_short_name')]) }}</div>
-                <div>{{ __('store.tax_id') }}: {{ config('company.tax_id') }}</div>
+            <div class="mt-5 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4 text-xs leading-5 text-slate-500">
+                <div class="font-semibold text-slate-300">{{ __('store.operated_by', ['company' => config('company.legal_short_name')]) }}</div>
+                <div class="mt-2">{{ __('store.tax_id') }}: {{ config('company.tax_id') }}</div>
                 <div>{{ config('company.legal_address') }}</div>
                 <div>{{ __('store.phone') }}: {{ config('company.phone_display') }}</div>
                 @if(config('company.support_email'))<div>Email: {{ config('company.support_email') }}</div>@endif
