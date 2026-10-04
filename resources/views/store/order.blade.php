@@ -2,35 +2,54 @@
 
 @section('content')
 @php
+    $locale = app()->getLocale();
     $paymentDone = $order->payment_status === 'paid';
     $securityDone = in_array($order->fulfillment_status, ['processing', 'fulfilled']);
     $fulfillmentDone = $order->fulfillment_status === 'fulfilled';
 
-    $copy = match(app()->getLocale()) {
+    $copy = match($locale) {
         'az' => [
             'order' => 'Sifariş', 'created' => 'Yaradılıb', 'progress' => 'Sifariş gedişatı',
             'payment' => 'Ödəniş yoxlaması', 'payment_done' => 'Ödəniş təsdiqlənib.', 'payment_wait' => 'Ödəniş təsdiqi gözlənilir.',
             'security' => 'Təhlükəsizlik yoxlaması', 'security_text' => 'Sifariş təhlükəsizlik və uyğunluq yoxlamasından keçir.',
-            'delivery' => 'Rəqəmsal çatdırılma', 'fulfilled' => 'Sifariş fulfillment olunub.', 'fulfillment_wait' => 'Təsdiqdən sonra fulfillment başlayır.',
+            'delivery' => 'Rəqəmsal çatdırılma', 'fulfilled' => 'Sifariş çatdırılıb.', 'fulfillment_wait' => 'Təsdiqdən sonra çatdırılma prosesi başlayır.',
             'items' => 'Məhsullar', 'quantity' => 'Miqdar', 'summary' => 'Xülasə', 'customer' => 'Müştəri',
-            'fulfillment' => 'Fulfillment', 'status' => 'Sifariş statusu', 'total' => 'Cəmi', 'help' => 'Kömək lazımdır?',
+            'fulfillment' => 'Çatdırılma', 'status' => 'Sifariş statusu', 'total' => 'Cəmi', 'help' => 'Kömək lazımdır?',
         ],
         'ru' => [
             'order' => 'Заказ', 'created' => 'Создан', 'progress' => 'Ход заказа',
             'payment' => 'Проверка оплаты', 'payment_done' => 'Оплата подтверждена.', 'payment_wait' => 'Ожидается подтверждение оплаты.',
             'security' => 'Проверка безопасности', 'security_text' => 'Заказ проходит проверку безопасности и соответствия.',
-            'delivery' => 'Цифровая доставка', 'fulfilled' => 'Заказ исполнен.', 'fulfillment_wait' => 'Исполнение начинается после подтверждения.',
+            'delivery' => 'Цифровая доставка', 'fulfilled' => 'Заказ доставлен.', 'fulfillment_wait' => 'Доставка начинается после подтверждения.',
             'items' => 'Товары', 'quantity' => 'Количество', 'summary' => 'Сводка', 'customer' => 'Клиент',
-            'fulfillment' => 'Исполнение', 'status' => 'Статус заказа', 'total' => 'Итого', 'help' => 'Нужна помощь?',
+            'fulfillment' => 'Доставка', 'status' => 'Статус заказа', 'total' => 'Итого', 'help' => 'Нужна помощь?',
         ],
         default => [
             'order' => 'Order', 'created' => 'Created', 'progress' => 'Order progress',
             'payment' => 'Payment verification', 'payment_done' => 'Payment confirmed.', 'payment_wait' => 'Waiting for payment confirmation.',
             'security' => 'Security review', 'security_text' => 'Order security and eligibility checks are in progress.',
-            'delivery' => 'Digital delivery', 'fulfilled' => 'Order fulfilled.', 'fulfillment_wait' => 'Fulfillment begins after approval.',
+            'delivery' => 'Digital delivery', 'fulfilled' => 'Order delivered.', 'fulfillment_wait' => 'Delivery begins after approval.',
             'items' => 'Items', 'quantity' => 'Quantity', 'summary' => 'Summary', 'customer' => 'Customer',
-            'fulfillment' => 'Fulfillment', 'status' => 'Order status', 'total' => 'Total', 'help' => 'Need help?',
+            'fulfillment' => 'Delivery', 'status' => 'Order status', 'total' => 'Total', 'help' => 'Need help?',
         ],
+    };
+
+    $paymentLabels = match($locale) {
+        'az' => ['unpaid' => 'Ödənilməyib', 'pending' => 'Gözlənilir', 'paid' => 'Ödənilib', 'failed' => 'Uğursuz', 'refund_pending' => 'Geri ödəniş gözlənilir', 'refunded' => 'Geri ödənilib'],
+        'ru' => ['unpaid' => 'Не оплачено', 'pending' => 'Ожидается', 'paid' => 'Оплачено', 'failed' => 'Ошибка', 'refund_pending' => 'Возврат ожидается', 'refunded' => 'Возвращено'],
+        default => ['unpaid' => 'Unpaid', 'pending' => 'Pending', 'paid' => 'Paid', 'failed' => 'Failed', 'refund_pending' => 'Refund pending', 'refunded' => 'Refunded'],
+    };
+
+    $fulfillmentLabels = match($locale) {
+        'az' => ['pending' => 'Gözlənilir', 'security_review' => 'Təhlükəsizlik yoxlaması', 'processing' => 'Emal olunur', 'unknown' => 'Əl ilə yoxlama', 'fulfilled' => 'Çatdırılıb', 'failed' => 'Uğursuz'],
+        'ru' => ['pending' => 'Ожидается', 'security_review' => 'Проверка безопасности', 'processing' => 'Обрабатывается', 'unknown' => 'Ручная проверка', 'fulfilled' => 'Доставлено', 'failed' => 'Ошибка'],
+        default => ['pending' => 'Pending', 'security_review' => 'Security review', 'processing' => 'Processing', 'unknown' => 'Manual review', 'fulfilled' => 'Delivered', 'failed' => 'Failed'],
+    };
+
+    $orderLabels = match($locale) {
+        'az' => ['pending' => 'Gözlənilir', 'security_review' => 'Təhlükəsizlik yoxlaması', 'processing' => 'Emal olunur', 'completed' => 'Tamamlanıb', 'cancelled' => 'Ləğv edilib', 'failed' => 'Uğursuz'],
+        'ru' => ['pending' => 'Ожидается', 'security_review' => 'Проверка безопасности', 'processing' => 'Обрабатывается', 'completed' => 'Завершён', 'cancelled' => 'Отменён', 'failed' => 'Ошибка'],
+        default => ['pending' => 'Pending', 'security_review' => 'Security review', 'processing' => 'Processing', 'completed' => 'Completed', 'cancelled' => 'Cancelled', 'failed' => 'Failed'],
     };
 @endphp
 
@@ -85,9 +104,9 @@
                 <h2 class="font-bold">{{ $copy['summary'] }}</h2>
                 <div class="mt-5 space-y-4 text-sm">
                     <div class="flex justify-between gap-5"><span class="text-slate-500">{{ $copy['customer'] }}</span><span class="break-all text-right text-slate-200">{{ $order->customer_email }}</span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">{{ $copy['payment'] }}</span><span class="text-slate-200">{{ ucfirst($order->payment_status) }}</span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">{{ $copy['fulfillment'] }}</span><span class="text-slate-200">{{ ucfirst(str_replace('_', ' ', $order->fulfillment_status)) }}</span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">{{ $copy['status'] }}</span><span class="text-slate-200">{{ ucfirst($order->status) }}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">{{ $copy['payment'] }}</span><span class="text-slate-200">{{ $paymentLabels[$order->payment_status] ?? ucfirst(str_replace('_', ' ', $order->payment_status)) }}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">{{ $copy['fulfillment'] }}</span><span class="text-slate-200">{{ $fulfillmentLabels[$order->fulfillment_status] ?? ucfirst(str_replace('_', ' ', $order->fulfillment_status)) }}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">{{ $copy['status'] }}</span><span class="text-slate-200">{{ $orderLabels[$order->status] ?? ucfirst(str_replace('_', ' ', $order->status)) }}</span></div>
                 </div>
                 <div class="my-6 border-t border-white/10"></div>
                 <div class="flex items-center justify-between gap-4"><span class="font-semibold">{{ $copy['total'] }}</span><span class="text-2xl font-black">{{ number_format($order->total, 2) }} {{ $order->currency }}</span></div>
