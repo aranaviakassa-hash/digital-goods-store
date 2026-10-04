@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     'products' => 'Məhsullar',
     'track_order' => 'Sifarişi izlə',
     'help' => 'Kömək',
@@ -11,35 +10,35 @@ return [
     'create_account' => 'Hesab yarat',
     'my_account' => 'Hesabım',
 
-    'hero_badge' => 'Təhlükəsiz rəqəmsal oyun mağazası',
+    'hero_badge' => 'Rəqəmsal oyun top-up mağazası',
     'hero_title_1' => 'Oyunun üçün lazım olan hər şey.',
     'hero_title_2' => 'Sürətli və rahat.',
-    'hero_text' => 'Oyun top-up və rəqəmsal məhsullarını şəffaf qiymətlərlə al, sifarişini izlə və təhlükəsiz emal prosesindən istifadə et.',
+    'hero_text' => 'Oyun top-up və rəqəmsal məhsullarını bir yerdə kəşf et. Aktivləşdirilmiş məhsullarda sifariş, ödəniş və izləmə prosesi təhlükəsiz şəkildə həyata keçiriləcək.',
 
     'browse_products' => 'Məhsullara bax',
     'track_an_order' => 'Sifarişi izlə',
 
-    'hero_point_secure' => 'Təhlükəsiz sifariş prosesi',
+    'hero_point_secure' => 'Qorunan sifariş prosesi',
     'hero_point_tracking' => 'Sifariş izləmə',
-    'hero_point_support' => 'Yerli dəstək',
+    'hero_point_support' => 'AZ / EN / RU dəstəyi',
 
-    'trending_now' => 'Hazırda populyar',
+    'trending_now' => 'Seçilmiş oyunlar',
     'game_topups' => 'Oyun top-up xidmətləri',
-    'online' => 'Aktiv',
-    'delivery_estimate' => 'Tipik emal müddəti',
-    'delivery_1_5_minutes' => '1–5 dəqiqə',
+    'online' => 'Review rejimi',
+    'delivery_estimate' => 'Çatdırılma',
+    'delivery_1_5_minutes' => 'Aktivləşmədən sonra',
 
-    'secure_payments' => 'Təhlükəsiz ödəniş',
+    'secure_payments' => 'Qorunan ödəniş',
     'digital_delivery' => 'Rəqəmsal çatdırılma',
     'order_protection' => 'Sifariş qorunması',
 
-    'trust_secure_title' => 'Təhlükəsiz checkout',
-    'trust_secure_text' => 'Server tərəfli yoxlama',
-    'trust_delivery_title' => 'Sürətli emal',
-    'trust_delivery_text' => 'Adətən 1–5 dəqiqə',
+    'trust_secure_title' => 'Qorunan checkout',
+    'trust_secure_text' => 'Server-side validation + HTTPS',
+    'trust_delivery_title' => 'Rəqəmsal çatdırılma',
+    'trust_delivery_text' => 'Yalnız aktiv məhsullarda',
     'trust_tracking_title' => 'Sifariş izləmə',
     'trust_tracking_text' => 'Statusunu yoxla',
-    'trust_support_title' => 'Yerli dəstək',
+    'trust_support_title' => 'Çoxdilli təcrübə',
     'trust_support_text' => 'AZ / EN / RU',
 
     'featured' => 'Seçilmiş',
@@ -47,7 +46,14 @@ return [
     'popular_products_text' => 'Ən çox seçilən oyun top-up xidmətlərinə bir yerdən bax.',
     'view_all' => 'Hamısına bax',
     'available' => 'Mövcuddur',
+    'review_preview' => 'Review preview',
     'from' => 'Başlayan qiymət',
+    'pricing' => 'Qiymət',
+    'pending_activation' => 'Aktivləşmə gözlənilir',
+
+    'catalogue_eyebrow' => 'Rəqəmsal kataloq',
+    'catalogue_title' => 'PlayCharge məhsulları',
+    'catalogue_intro' => 'PlayCharge oyun top-up kataloquna bax. Review preview kimi göstərilən məhsullar kommersiya aktivləşməsi tamamlanana qədər məlumat və bank baxışı məqsədi ilə açıqdır.',
 
     'catalog_preparing' => 'Məhsul kataloqu hazırlanır',
     'catalog_preparing_text' => 'Təsdiqlənmiş məhsullar satışa hazır olduqda burada görünəcək.',
@@ -69,7 +75,7 @@ return [
 
     'popular_now' => 'Populyar',
     'trending_title' => 'Oyun dünyasında ən çox seçilənlərə sürətli çıxış.',
-    'trending_text' => 'Saxta endirim və şişirdilmiş vədlər olmadan, hazırda kataloqda təqdim edilən məhsulları rahat şəkildə kəşf et.',
+    'trending_text' => 'Saxta endirim və şişirdilmiş vədlər olmadan, kataloqda təqdim edilən məhsulları rahat şəkildə kəşf et.',
     'see_catalog' => 'Kataloqa bax',
 
     'simple_process' => 'Sadə proses',
@@ -77,7 +83,7 @@ return [
     'how_it_works_text' => 'Sifariş prosesi mümkün qədər aydın və rahat qurulub.',
 
     'choose_product' => 'Məhsulu seç',
-    'complete_payment' => 'Ödənişi tamamla',
+    'complete_payment' => 'Ödənişi yoxla',
     'receive_order' => 'Sifarişi əldə et',
 
     'step_choose_title' => 'Oyunu seç',
@@ -86,18 +92,18 @@ return [
     'step_details_title' => 'Məlumatları daxil et',
     'step_details_text' => 'Məhsul tələb edirsə Player ID, UID və ya digər lazımi məlumatları düzgün daxil et.',
 
-    'step_payment_title' => 'Ödənişi tamamla',
-    'step_payment_text' => 'Checkout səhifəsində yekun məbləği yoxla və ödənişi tamamla.',
+    'step_payment_title' => 'Məbləği və ödənişi yoxla',
+    'step_payment_text' => 'Bank inteqrasiyası aktiv olduqda checkout səhifəsində yekun məbləği yoxlayıb ödənişi tamamlayacaqsan.',
 
     'step_delivery_title' => 'Sifarişini al',
-    'step_delivery_text' => 'Sifariş emal edilir və statusunu istənilən vaxt izləyə bilərsən.',
+    'step_delivery_text' => 'Aktiv məhsullarda sifariş emal edilir və statusunu istənilən vaxt izləyə bilərsən.',
 
-    'why_nexora_eyebrow' => 'Niyə NEXORA?',
+    'why_nexora_eyebrow' => 'Niyə PlayCharge?',
     'why_nexora_title' => 'Sadəcə satış deyil. Aydın və izlənilən proses.',
-    'why_nexora_text' => 'NEXORA rəqəmsal məhsul alışını mümkün qədər şəffaf, izlənilən və təhlükəsiz etmək üçün hazırlanır.',
+    'why_nexora_text' => 'PlayCharge rəqəmsal məhsul alışını mümkün qədər şəffaf, izlənilən və təhlükəsiz etmək üçün hazırlanır.',
 
     'why_speed_title' => 'Sürətli emal',
-    'why_speed_text' => 'Uyğun sifarişlər adətən 1–5 dəqiqə ərzində emal olunur. Xüsusi yoxlama halları 24 saata qədər çəkə bilər.',
+    'why_speed_text' => 'Kommersiya aktivləşməsindən sonra uyğun sifarişlərin mümkün qədər sürətli emalı nəzərdə tutulur; xüsusi yoxlama halları daha uzun çəkə bilər.',
 
     'why_tracking_title' => 'Sifariş izləmə',
     'why_tracking_text' => 'Sifariş nömrəsi və təhlükəsiz giriş mexanizmi ilə statusunu izləyə bilərsən.',
@@ -111,7 +117,7 @@ return [
     'learn_more' => 'Ətraflı öyrən',
 
     'registered_business' => 'Qeydiyyatdan keçmiş biznes',
-    'company_transparency_text' => 'NEXORA müştərilər və ödəniş tərəfdaşları üçün satıcı məlumatlarını açıq və şəffaf şəkildə təqdim edir.',
+    'company_transparency_text' => 'PlayCharge müştərilər və ödəniş tərəfdaşları üçün satıcı məlumatlarını açıq və şəffaf şəkildə təqdim edir.',
 
     'tax_id' => 'VÖEN',
     'address' => 'Hüquqi ünvan',
@@ -121,7 +127,7 @@ return [
     'view_legal' => 'Hüquqi məlumatlar',
 
     'final_cta_title' => 'Növbəti top-up üçün hazırsan?',
-    'final_cta_text' => 'Kataloqa bax, uyğun məhsulu seç və sifariş prosesinə başla.',
+    'final_cta_text' => 'Kataloqa bax, uyğun məhsulu seç və məhsul aktiv olduqda sifariş prosesinə başla.',
 
     'customer' => 'Müştəri',
     'legal' => 'Hüquqi',
@@ -133,4 +139,7 @@ return [
     'delivery_policy' => 'Çatdırılma Siyasəti',
     'fraud_security' => 'Fırıldaqçılıq və Təhlükəsizlik',
 
+    'footer_text' => 'Rəqəmsal oyun məhsulları və top-up xidmətləri üçün PlayCharge platforması.',
+    'operated_by' => 'PlayCharge :company tərəfindən idarə olunur.',
+    'trademark_notice' => 'Oyun adları, loqoları və ticarət nişanları müvafiq hüquq sahiblərinə məxsusdur. Açıq şəkildə bildirilmədiyi halda PlayCharge həmin publisher-lərlə tərəfdaşlıq və ya rəsmi əlaqə iddia etmir.',
 ];
