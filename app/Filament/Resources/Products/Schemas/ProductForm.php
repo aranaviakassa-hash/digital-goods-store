@@ -72,12 +72,34 @@ class ProductForm
                         'Enable only after the commercial/resale basis has been verified and documented.'
                     ),
 
+                TextInput::make('resale_verification_reference')
+                    ->label('Resale evidence reference')
+                    ->maxLength(255)
+                    ->helperText(
+                        'Document ID, contract reference, supplier ticket, or another traceable evidence reference.'
+                    ),
+
                 Toggle::make('bank_approved')
                     ->label('Bank approved')
                     ->default(false)
                     ->helperText(
                         'Enable only after merchant/acquiring approval permits live sale and the approval is documented.'
                     ),
+
+                TextInput::make('bank_approval_reference')
+                    ->label('Bank approval reference')
+                    ->maxLength(255)
+                    ->helperText(
+                        'Merchant approval, email, ticket, or acquiring reference supporting this flag.'
+                    ),
+
+                Textarea::make('approval_notes')
+                    ->label('Approval notes')
+                    ->rows(3)
+                    ->helperText(
+                        'Internal notes only. Approval flag changes are written to the immutable audit log.'
+                    )
+                    ->columnSpanFull(),
 
                 Textarea::make('description')
                     ->rows(5)
