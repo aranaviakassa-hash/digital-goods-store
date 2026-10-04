@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AuditLog;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use LogicException;
 use Tests\TestCase;
@@ -45,5 +46,23 @@ class AuditLogImmutabilityTest extends TestCase
         );
 
         $log->delete();
+    }
+
+    public function test_query_builder_cannot_bypass_audit_log_immutability(): void
+    {
+        $log = AuditLog::create([
+            'event' => 'test.created',
+            'context' => [
+                'source' => 'test',
+            ],
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        AuditLog::query()
+            ->whereKey($log->id)
+            ->update([
+                'event' => 'test.bypass',
+            ]);
     }
 }
