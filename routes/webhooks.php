@@ -6,4 +6,6 @@ use Illuminate\Support\Facades\Route;
 Route::post(
     '/payment',
     [PaymentWebhookController::class, 'handle']
-)->name('payment');
+)
+    ->middleware('throttle:60,1')
+    ->name('payment');
