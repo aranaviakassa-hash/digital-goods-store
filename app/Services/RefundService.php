@@ -29,12 +29,6 @@ class RefundService
             $reason,
             $cancelOrder
         ) {
-            /*
-             * Canonical lock order:
-             * 1. Order
-             * 2. PaymentAttempt
-             * 3. Refund
-             */
             $lockedOrder = Order::query()
                 ->whereKey($order->id)
                 ->lockForUpdate()
@@ -43,20 +37,35 @@ class RefundService
             if ($paymentAttempt) {
                 $lockedAttempt = PaymentAttempt::query()
                     ->whereKey($paymentAttempt->id)
-                    ->where(
-                        'order_id',
-                        $lockedOrder->id
-                    )
+                    ->where('order_id', $lockedOrder->id)
                     ->lockForUpdate()
                     ->firstOrFail();
             } else {
-                $lockedAttempt = PaymentAttempt::query()
-                    ->where(
-                        'order_id',
-                        $lockedOrder->id
-                    )
+                /*
+                 * Prefer the payment that actually funded the order.
+                 * payment_reference is written from the provider payment ID
+                 * when the first accepted capture moves the order forward.
+                 * This avoids refunding a later duplicate capture merely
+                 * because it has the highest local ID.
+                 */
+                $lockedAttempt = null;
+
+                if (filled($lockedOrder->payment_reference)) {
+                    $lockedAttempt = PaymentAttempt::query()
+                        ->where('order_id', $lockedOrder->id)
+                        ->where('status', 'paid')
+                        ->where(
+                            'provider_payment_id',
+                            $lockedOrder->payment_reference
+                        )
+                        ->lockForUpdate()
+                        ->first();
+                }
+
+                $lockedAttempt ??= PaymentAttempt::query()
+                    ->where('order_id', $lockedOrder->id)
                     ->where('status', 'paid')
-                    ->latest('id')
+                    ->oldest('id')
                     ->lockForUpdate()
                     ->first();
             }
@@ -74,10 +83,7 @@ class RefundService
             }
 
             $existing = Refund::query()
-                ->where(
-                    'payment_attempt_id',
-                    $lockedAttempt->id
-                )
+                ->where('payment_attempt_id', $lockedAttempt->id)
                 ->lockForUpdate()
                 ->first();
 
@@ -85,31 +91,21 @@ class RefundService
                 return $existing->fresh();
             }
 
-            /*
-             * If this refund will cancel the underlying order, never
-             * automate it after delivery has started or become uncertain.
-             *
-             * A duplicate captured payment is different: callers pass
-             * cancelOrder=false and the exact duplicate PaymentAttempt.
-             * Refunding that extra capture does not reverse delivered goods,
-             * so fulfillment state must not block creation of the refund task.
-             */
-            $unsafeFulfillmentExists =
-                FulfillmentAttempt::query()
-                    ->where(
-                        'order_id',
-                        $lockedOrder->id
-                    )
-                    ->whereIn(
-                        'status',
-                        [
-                            'processing',
-                            'unknown',
-                            'fulfilled',
-                        ]
-                    )
-                    ->exists();
+            $unsafeFulfillmentExists = FulfillmentAttempt::query()
+                ->where('order_id', $lockedOrder->id)
+                ->whereIn(
+                    'status',
+                    ['processing', 'unknown', 'fulfilled']
+                )
+                ->exists();
 
+            /*
+             * Cancelling/refunding the order's funding payment after
+             * fulfillment began needs manual review. A duplicate capture
+             * refund passes cancelOrder=false with that exact extra attempt;
+             * it is safe to create the refund requirement without reversing
+             * the delivered order.
+             */
             if ($cancelOrder && $unsafeFulfillmentExists) {
                 throw new RuntimeException(
                     'Refund requires manual review because fulfillment has started or is uncertain.'
@@ -117,46 +113,21 @@ class RefundService
             }
 
             $refund = Refund::create([
-                'order_id' =>
-                    $lockedOrder->id,
-
-                'payment_attempt_id' =>
-                    $lockedAttempt->id,
-
-                'provider' =>
-                    $lockedAttempt->provider,
-
+                'order_id' => $lockedOrder->id,
+                'payment_attempt_id' => $lockedAttempt->id,
+                'provider' => $lockedAttempt->provider,
                 'status' => 'required',
-
-                'idempotency_key' =>
-                    'REF-' .
-                    strtoupper(
-                        Str::uuid()->toString()
-                    ),
-
-                /*
-                 * Refund the captured payment snapshot,
-                 * not a potentially changed order total.
-                 */
-                'amount' =>
-                    $lockedAttempt->amount,
-
-                'currency' =>
-                    $lockedAttempt->currency,
-
+                'idempotency_key' => 'REF-' . strtoupper(Str::uuid()->toString()),
+                'amount' => $lockedAttempt->amount,
+                'currency' => $lockedAttempt->currency,
                 'reason' => $reason,
             ]);
 
             if ($cancelOrder) {
                 $lockedOrder->update([
-                    'payment_status' =>
-                        'refund_pending',
-
-                    'status' =>
-                        'cancelled',
-
-                    'fulfillment_status' =>
-                        'blocked',
+                    'payment_status' => 'refund_pending',
+                    'status' => 'cancelled',
+                    'fulfillment_status' => 'blocked',
                 ]);
             }
 
@@ -164,26 +135,13 @@ class RefundService
                 'refund.required',
                 $lockedOrder,
                 [
-                    'refund_id' =>
-                        $refund->id,
-
-                    'payment_attempt_id' =>
-                        $lockedAttempt->id,
-
-                    'amount' =>
-                        $refund->amount,
-
-                    'currency' =>
-                        $refund->currency,
-
-                    'provider' =>
-                        $refund->provider,
-
-                    'cancel_order' =>
-                        $cancelOrder,
-
-                    'reason' =>
-                        $reason,
+                    'refund_id' => $refund->id,
+                    'payment_attempt_id' => $lockedAttempt->id,
+                    'amount' => $refund->amount,
+                    'currency' => $refund->currency,
+                    'provider' => $refund->provider,
+                    'cancel_order' => $cancelOrder,
+                    'reason' => $reason,
                 ]
             );
 
