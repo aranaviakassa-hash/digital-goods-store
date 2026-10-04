@@ -16,6 +16,13 @@ class ExternalAuditSecurityRegressionTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['company.live_payment_enabled' => true]);
+    }
+
     public function test_admin_account_cannot_sign_in_through_storefront_login(): void
     {
         $admin = User::create([
