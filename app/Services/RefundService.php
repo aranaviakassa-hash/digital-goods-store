@@ -86,8 +86,13 @@ class RefundService
             }
 
             /*
-             * Never automatically refund while delivery could
-             * already have happened or still be uncertain.
+             * If this refund will cancel the underlying order, never
+             * automate it after delivery has started or become uncertain.
+             *
+             * A duplicate captured payment is different: callers pass
+             * cancelOrder=false and the exact duplicate PaymentAttempt.
+             * Refunding that extra capture does not reverse delivered goods,
+             * so fulfillment state must not block creation of the refund task.
              */
             $unsafeFulfillmentExists =
                 FulfillmentAttempt::query()
@@ -105,7 +110,7 @@ class RefundService
                     )
                     ->exists();
 
-            if ($unsafeFulfillmentExists) {
+            if ($cancelOrder && $unsafeFulfillmentExists) {
                 throw new RuntimeException(
                     'Refund requires manual review because fulfillment has started or is uncertain.'
                 );
