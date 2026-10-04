@@ -1,6 +1,6 @@
 @php
     $name = strtolower($product->name);
-    $isSellable = $product->isSellable();
+    $isPurchasable = $product->isPurchasableNow();
     $categoryLabel = strcasecmp((string) $product->category, 'Direct Top-Up') === 0
         ? __('store.direct_topup')
         : $product->category;
@@ -23,7 +23,7 @@
     <div class="relative p-6">
         <div class="flex items-center justify-between gap-3">
             <span class="rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] {{ $style['badge'] }}">{{ $categoryLabel }}</span>
-            @if($isSellable)
+            @if($isPurchasable)
                 <span class="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-400"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>{{ __('store.available') }}</span>
             @else
                 <span class="inline-flex items-center gap-1.5 text-[10px] font-bold text-amber-300"><span class="h-1.5 w-1.5 rounded-full bg-amber-300"></span>{{ __('store.review_preview') }}</span>
@@ -34,7 +34,7 @@
 
         <div class="mt-6 flex items-end justify-between gap-4 border-t border-white/[0.06] pt-5">
             <div>
-                @if($product->price !== null)
+                @if($product->price !== null && (float) $product->price > 0)
                     <div class="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">{{ __('store.from') }}</div>
                     <div class="mt-1 text-2xl font-black text-white">{{ number_format((float) $product->price, 2) }} <span class="text-sm font-semibold text-slate-500">{{ $product->currency }}</span></div>
                 @else
