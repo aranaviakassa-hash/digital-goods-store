@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? config('company.brand_full_name') }}</title>
-    <meta name="description" content="PlayCharge — rəqəmsal oyun məhsulları və top-up xidmətləri üçün təhlükəsiz onlayn mağaza.">
+    <meta name="description" content="PlayCharge — digital gaming products and top-up services.">
     <link rel="icon" type="image/svg+xml" href="{{ asset('brand/playcharge-mark.svg') }}">
     <meta name="theme-color" content="#070816">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -80,13 +80,13 @@
         <div class="md:col-span-2">
             <img src="{{ asset('brand/playcharge-logo.svg') }}" alt="PlayCharge" class="h-11 w-auto max-w-[210px]">
             <p class="mt-5 max-w-md text-sm leading-6 text-slate-400">
-                Rəqəmsal oyun məhsulları və top-up xidmətləri. Şəffaf qiymətlər, qorunan sifariş prosesi və təhlükəsiz ödəniş yoxlaması.
+                {{ __('store.footer_text') }}
             </p>
             <div class="mt-5 space-y-1 text-xs leading-5 text-slate-500">
-                <div>PlayCharge, {{ config('company.legal_short_name') }} tərəfindən idarə olunur.</div>
-                <div>VÖEN: {{ config('company.tax_id') }}</div>
+                <div>{{ __('store.operated_by', ['company' => config('company.legal_short_name')]) }}</div>
+                <div>{{ __('store.tax_id') }}: {{ config('company.tax_id') }}</div>
                 <div>{{ config('company.legal_address') }}</div>
-                <div>Tel: {{ config('company.phone_display') }}</div>
+                <div>{{ __('store.phone') }}: {{ config('company.phone_display') }}</div>
                 @if(config('company.support_email'))
                     <div>Email: {{ config('company.support_email') }}</div>
                 @endif
@@ -116,9 +116,14 @@
     </div>
 
     <div class="border-t border-white/10">
-        <div class="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-            <span>© {{ date('Y') }} {{ config('company.brand_full_name') }}.</span>
-            <span>{{ config('company.public_domain') }} • Secure digital commerce • AZN</span>
+        <div class="mx-auto max-w-7xl px-5 py-6 lg:px-8">
+            <p class="max-w-5xl text-[11px] leading-5 text-slate-600">
+                {{ __('store.trademark_notice') }}
+            </p>
+            <div class="mt-4 flex flex-col gap-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+                <span>© {{ date('Y') }} {{ config('company.brand_full_name') }}.</span>
+                <span>{{ config('company.public_domain') }} • Secure digital commerce • AZN</span>
+            </div>
         </div>
     </div>
 </footer>
