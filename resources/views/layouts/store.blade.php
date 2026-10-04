@@ -2,26 +2,15 @@
 <html lang="{{ app()->getLocale() }}" class="scroll-smooth">
 <head>
     @php
-        $locale = app()->getLocale();
-        $metaDescription = match($locale) {
+        $metaDescription = match(app()->getLocale()) {
             'az' => 'PlayCharge — rəqəmsal oyun məhsulları və top-up xidmətləri üçün təhlükəsiz və izlənilən platforma.',
             'ru' => 'PlayCharge — платформа для цифровых игровых товаров и пополнений с защищённым и отслеживаемым процессом.',
             default => 'PlayCharge — digital gaming products and top-up services with a secure, trackable customer journey.',
         };
-        $secureCommerce = match($locale) {
+        $secureCommerce = match(app()->getLocale()) {
             'az' => 'Qorunan rəqəmsal ticarət',
             'ru' => 'Защищённая цифровая торговля',
             default => 'Secure digital commerce',
-        };
-        $reviewTitle = match($locale) {
-            'az' => 'Merchant review rejimi',
-            'ru' => 'Режим merchant review',
-            default => 'Merchant review mode',
-        };
-        $reviewText = match($locale) {
-            'az' => 'Sayt ABB merchant/acquiring yoxlaması üçün non-transactional preview rejimindədir. Real kart ödənişi aktiv deyil.',
-            'ru' => 'Сайт работает в режиме non-transactional preview для merchant/acquiring проверки ABB. Реальные карточные платежи не активны.',
-            default => 'This site is in non-transactional preview mode for ABB merchant/acquiring review. Live card payments are not enabled.',
         };
     @endphp
     <meta charset="UTF-8">
@@ -29,111 +18,157 @@
     <title>{{ $title ?? config('company.brand_full_name') }}</title>
     <meta name="description" content="{{ $metaDescription }}">
     <link rel="icon" type="image/svg+xml" href="{{ asset('brand/playcharge-mark.svg') }}">
-    <meta name="theme-color" content="#070816">
+    <meta name="theme-color" content="#05070d">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen text-white antialiased pc-grid-bg">
+<body class="min-h-screen bg-[#05070d] text-white antialiased pc-shell">
 @if(!config('company.live_payment_enabled'))
-    <div class="border-b border-amber-300/20 bg-amber-300/[0.08]">
-        <div class="mx-auto flex max-w-7xl items-start gap-3 px-5 py-2.5 text-[11px] leading-5 text-amber-100/90 lg:px-8 sm:items-center sm:text-xs">
-            <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-amber-300/25 bg-amber-300/10 text-[10px] font-black text-amber-200 sm:mt-0">!</span>
-            <p><strong class="font-black text-amber-100">{{ $reviewTitle }}:</strong> {{ $reviewText }}</p>
+    <div class="relative z-[60] border-b border-blue-400/15 bg-[#081326]">
+        <div class="mx-auto flex min-h-10 max-w-7xl items-center justify-center gap-2 px-4 py-2 text-center text-[11px] font-semibold leading-5 text-blue-100 sm:text-xs">
+            <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-blue-300/20 bg-blue-300/10 text-[10px]">◆</span>
+            <span><strong>{{ __('store.bank_review_preview') }}</strong> — {{ __('store.bank_review_preview_text') }}</span>
         </div>
     </div>
 @endif
 
-<header class="sticky top-0 z-50 border-b border-white/10 bg-[#070816]/85 backdrop-blur-2xl">
-    <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 lg:px-8">
-        <a href="{{ route('home') }}" class="group flex items-center gap-3" aria-label="PlayCharge home">
-            <img src="{{ asset('brand/playcharge-logo.svg') }}" alt="PlayCharge" class="h-10 w-auto max-w-[190px] transition duration-300 group-hover:scale-[1.015]">
+<header class="sticky top-0 z-50 border-b border-white/[0.07] bg-[#05070d]/88 backdrop-blur-2xl">
+    <div class="pc-glow-line"></div>
+    <div class="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-5 lg:px-8">
+        <a href="{{ route('home') }}" class="group flex min-h-12 items-center" aria-label="PlayCharge">
+            <img src="{{ asset('brand/playcharge-logo.svg') }}" alt="PlayCharge" class="h-9 w-auto max-w-[185px] transition duration-300 group-hover:brightness-125">
         </a>
 
-        <nav class="hidden items-center gap-7 text-sm text-slate-300 md:flex">
-            <a href="{{ route('products.index') }}" class="transition hover:text-cyan-300">{{ __('store.products') }}</a>
-            <a href="{{ route('orders.track') }}" class="transition hover:text-violet-300">{{ __('store.track_order') }}</a>
-            <a href="{{ route('help.index') }}" class="transition hover:text-fuchsia-300">{{ __('store.help') }}</a>
-            <a href="{{ route('contact') }}" class="transition hover:text-blue-300">{{ __('store.support') }}</a>
+        <nav class="hidden items-center gap-1 md:flex" aria-label="Primary navigation">
+            @foreach([
+                [route('products.index'), __('store.products')],
+                [route('orders.track'), __('store.track_order')],
+                [route('help.index'), __('store.help')],
+                [route('contact'), __('store.support')],
+            ] as [$href, $label])
+                <a href="{{ $href }}" class="inline-flex min-h-11 items-center rounded-xl px-4 text-sm font-semibold text-slate-400 transition hover:bg-white/[0.045] hover:text-white">{{ $label }}</a>
+            @endforeach
         </nav>
 
-        <div class="flex items-center gap-3">
-            <div class="hidden items-center gap-1 rounded-xl border border-white/10 bg-white/[0.035] p-1 sm:flex">
-                @foreach(['az' => 'AZ', 'en' => 'EN', 'ru' => 'RU'] as $localeCode => $label)
-                    <a href="{{ route('locale.update', $localeCode) }}" class="rounded-lg px-2.5 py-1.5 text-xs font-semibold transition {{ app()->getLocale() === $localeCode ? 'pc-brand-gradient text-white' : 'text-slate-400 hover:text-white' }}">{{ $label }}</a>
+        <div class="flex items-center gap-2">
+            <div class="hidden items-center rounded-xl border border-white/[0.08] bg-white/[0.025] p-1 lg:flex">
+                @foreach(['az' => 'AZ', 'en' => 'EN', 'ru' => 'RU'] as $locale => $label)
+                    <a href="{{ route('locale.update', $locale) }}" class="inline-flex min-h-9 items-center rounded-lg px-2.5 text-[11px] font-black tracking-wider transition {{ app()->getLocale() === $locale ? 'bg-white text-[#05070d]' : 'text-slate-500 hover:text-white' }}">{{ $label }}</a>
                 @endforeach
             </div>
 
             @auth
-                <a href="{{ route('account.index') }}" class="hidden text-sm text-slate-300 transition hover:text-white lg:inline">{{ __('store.my_account') }}</a>
-                <form method="POST" action="{{ route('logout') }}">
+                <a href="{{ route('account.index') }}" class="hidden min-h-11 items-center rounded-xl px-4 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.04] hover:text-white sm:inline-flex">{{ __('store.my_account') }}</a>
+                <form method="POST" action="{{ route('logout') }}" class="hidden sm:block">
                     @csrf
-                    <button type="submit" class="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-slate-200 transition hover:bg-white/[0.08]">{{ __('store.logout') }}</button>
+                    <button type="submit" class="inline-flex min-h-11 items-center rounded-xl border border-white/[0.09] bg-white/[0.03] px-4 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.07]">{{ __('store.logout') }}</button>
                 </form>
             @else
-                <a href="{{ route('login') }}" class="hidden rounded-xl px-4 py-2 text-sm text-slate-300 transition hover:text-white sm:block">{{ __('store.login') }}</a>
-                <a href="{{ route('register') }}" class="pc-button rounded-xl px-4 py-2 text-sm font-semibold text-white transition">{{ __('store.create_account') }}</a>
+                <a href="{{ route('login') }}" class="hidden min-h-11 items-center rounded-xl px-4 text-sm font-semibold text-slate-300 transition hover:text-white lg:inline-flex">{{ __('store.login') }}</a>
+                <a href="{{ route('register') }}" class="pc-button hidden min-h-11 items-center rounded-xl px-4 text-sm font-bold text-white transition sm:inline-flex">{{ __('store.create_account') }}</a>
             @endauth
-        </div>
-    </div>
 
-    <div class="border-t border-white/5 px-5 py-3 sm:hidden">
-        <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
-            <div class="flex min-w-0 gap-4 overflow-x-auto whitespace-nowrap text-sm text-slate-400 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <a href="{{ route('products.index') }}">{{ __('store.products') }}</a>
-                <a href="{{ route('orders.track') }}">{{ __('store.track_order') }}</a>
-                <a href="{{ route('help.index') }}">{{ __('store.help') }}</a>
-                <a href="{{ route('contact') }}">{{ __('store.support') }}</a>
-            </div>
-            <div class="flex shrink-0 items-center gap-1">
-                @foreach(['az' => 'AZ', 'en' => 'EN', 'ru' => 'RU'] as $localeCode => $label)
-                    <a href="{{ route('locale.update', $localeCode) }}" class="rounded-md px-2 py-1 text-[11px] {{ app()->getLocale() === $localeCode ? 'pc-brand-gradient text-white' : 'text-slate-500' }}">{{ $label }}</a>
-                @endforeach
-            </div>
+            <button type="button" data-mobile-open aria-expanded="false" aria-controls="mobile-navigation" class="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.09] bg-white/[0.035] text-white md:hidden" aria-label="Menu">
+                <span class="grid gap-1.5">
+                    <span class="h-px w-5 bg-current"></span>
+                    <span class="h-px w-5 bg-current"></span>
+                    <span class="h-px w-5 bg-current"></span>
+                </span>
+            </button>
         </div>
     </div>
 </header>
 
+<div id="mobile-navigation" data-mobile-drawer data-open="false" class="pc-mobile-drawer fixed inset-0 z-[80] md:hidden">
+    <button type="button" data-mobile-close class="absolute inset-0 bg-black/70 backdrop-blur-sm" aria-label="Close"></button>
+    <aside class="pc-mobile-panel absolute inset-y-0 right-0 flex w-[min(92vw,390px)] flex-col border-l border-white/10 bg-[#080c15] shadow-2xl">
+        <div class="flex h-[76px] items-center justify-between border-b border-white/[0.07] px-5">
+            <img src="{{ asset('brand/playcharge-logo.svg') }}" alt="PlayCharge" class="h-8 w-auto max-w-[170px]">
+            <button type="button" data-mobile-close class="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-2xl text-slate-300" aria-label="Close">×</button>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto p-5" aria-label="Mobile navigation">
+            <div class="space-y-2">
+                @foreach([
+                    [route('products.index'), __('store.products'), '01'],
+                    [route('orders.track'), __('store.track_order'), '02'],
+                    [route('help.index'), __('store.help'), '03'],
+                    [route('contact'), __('store.support'), '04'],
+                ] as [$href, $label, $number])
+                    <a href="{{ $href }}" class="group flex min-h-16 items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.025] px-5 text-base font-bold text-white transition hover:border-blue-400/30 hover:bg-blue-400/[0.07]">
+                        <span>{{ $label }}</span><span class="text-[10px] font-black tracking-widest text-slate-600 group-hover:text-blue-300">{{ $number }}</span>
+                    </a>
+                @endforeach
+            </div>
+
+            <div class="mt-7 border-t border-white/[0.07] pt-6">
+                <div class="flex items-center gap-2">
+                    @foreach(['az' => 'AZ', 'en' => 'EN', 'ru' => 'RU'] as $locale => $label)
+                        <a href="{{ route('locale.update', $locale) }}" class="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl border text-xs font-black tracking-wider transition {{ app()->getLocale() === $locale ? 'border-blue-400/40 bg-blue-500/15 text-blue-100' : 'border-white/[0.07] bg-white/[0.02] text-slate-500' }}">{{ $label }}</a>
+                    @endforeach
+                </div>
+            </div>
+        </nav>
+
+        <div class="border-t border-white/[0.07] p-5">
+            @auth
+                <a href="{{ route('account.index') }}" class="pc-button flex min-h-12 items-center justify-center rounded-xl px-5 text-sm font-bold text-white">{{ __('store.my_account') }}</a>
+            @else
+                <div class="grid grid-cols-2 gap-3">
+                    <a href="{{ route('login') }}" class="flex min-h-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-sm font-bold text-slate-200">{{ __('store.login') }}</a>
+                    <a href="{{ route('register') }}" class="pc-button flex min-h-12 items-center justify-center rounded-xl px-4 text-sm font-bold text-white">{{ __('store.create_account') }}</a>
+                </div>
+            @endauth
+        </div>
+    </aside>
+</div>
+
 <main class="min-h-[70vh]">@yield('content')</main>
 
-<footer class="border-t border-white/10 bg-[#070816]/92 backdrop-blur-xl">
-    <div class="mx-auto grid max-w-7xl gap-10 px-5 py-14 md:grid-cols-4 lg:px-8">
-        <div class="md:col-span-2">
-            <img src="{{ asset('brand/playcharge-logo.svg') }}" alt="PlayCharge" class="h-11 w-auto max-w-[210px]">
-            <p class="mt-5 max-w-md text-sm leading-6 text-slate-400">{{ __('store.footer_text') }}</p>
-            <div class="mt-5 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4 text-xs leading-5 text-slate-500">
-                <div class="font-semibold text-slate-300">{{ __('store.operated_by', ['company' => config('company.legal_short_name')]) }}</div>
-                <div class="mt-2">{{ __('store.tax_id') }}: {{ config('company.tax_id') }}</div>
-                <div>{{ config('company.legal_address') }}</div>
-                <div>{{ __('store.phone') }}: {{ config('company.phone_display') }}</div>
-                @if(config('company.support_email'))<div>Email: {{ config('company.support_email') }}</div>@endif
+<footer class="border-t border-white/[0.08] bg-[#05070d]">
+    <div class="mx-auto max-w-7xl px-5 py-14 lg:px-8 lg:py-16">
+        <div class="grid gap-10 lg:grid-cols-[1.25fr_.75fr_.75fr]">
+            <div>
+                <img src="{{ asset('brand/playcharge-logo.svg') }}" alt="PlayCharge" class="h-10 w-auto max-w-[200px]">
+                <p class="mt-5 max-w-lg text-sm leading-7 text-slate-500">{{ __('store.footer_text') }}</p>
+
+                <div class="pc-panel mt-7 max-w-2xl rounded-2xl p-5">
+                    <div class="text-sm font-black text-white">{{ config('company.legal_short_name') }}</div>
+                    <div class="mt-3 grid gap-2 text-xs leading-5 text-slate-500 sm:grid-cols-2">
+                        <div>{{ __('store.tax_id') }}: <span class="text-slate-300">{{ config('company.tax_id') }}</span></div>
+                        <div>{{ __('store.phone') }}: <span class="text-slate-300">{{ config('company.phone_display') }}</span></div>
+                        <div class="sm:col-span-2">{{ __('store.address') }}: <span class="text-slate-300">{{ config('company.legal_address') }}</span></div>
+                        @if(config('company.support_email'))
+                            <div class="sm:col-span-2">Email: <span class="text-slate-300">{{ config('company.support_email') }}</span></div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="pc-kicker text-slate-500">{{ __('store.customer') }}</h3>
+                <div class="mt-5 flex flex-col gap-3 text-sm font-semibold text-slate-400">
+                    <a href="{{ route('products.index') }}" class="hover:text-white">{{ __('store.products') }}</a>
+                    <a href="{{ route('orders.track') }}" class="hover:text-white">{{ __('store.track_order') }}</a>
+                    <a href="{{ route('help.index') }}" class="hover:text-white">{{ __('store.help_center') }}</a>
+                    <a href="{{ route('contact') }}" class="hover:text-white">{{ __('store.support') }}</a>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="pc-kicker text-slate-500">{{ __('store.legal') }}</h3>
+                <div class="mt-5 flex flex-col gap-3 text-sm font-semibold text-slate-400">
+                    <a href="{{ route('legal.terms') }}" class="hover:text-white">{{ __('store.terms') }}</a>
+                    <a href="{{ route('legal.privacy') }}" class="hover:text-white">{{ __('store.privacy') }}</a>
+                    <a href="{{ route('legal.refund') }}" class="hover:text-white">{{ __('store.refund') }}</a>
+                    <a href="{{ route('legal.delivery') }}" class="hover:text-white">{{ __('store.delivery_policy') }}</a>
+                    <a href="{{ route('legal.security') }}" class="hover:text-white">{{ __('store.fraud_security') }}</a>
+                </div>
             </div>
         </div>
 
-        <div>
-            <h3 class="font-semibold">{{ __('store.customer') }}</h3>
-            <div class="mt-4 flex flex-col gap-3 text-sm text-slate-400">
-                <a href="{{ route('products.index') }}" class="hover:text-cyan-300">{{ __('store.products') }}</a>
-                <a href="{{ route('orders.track') }}" class="hover:text-violet-300">{{ __('store.track_order') }}</a>
-                <a href="{{ route('help.index') }}" class="hover:text-fuchsia-300">{{ __('store.help_center') }}</a>
-                <a href="{{ route('contact') }}" class="hover:text-blue-300">{{ __('store.support') }}</a>
-            </div>
-        </div>
-
-        <div>
-            <h3 class="font-semibold">{{ __('store.legal') }}</h3>
-            <div class="mt-4 flex flex-col gap-3 text-sm text-slate-400">
-                <a class="hover:text-white" href="{{ route('legal.terms') }}">{{ __('store.terms') }}</a>
-                <a class="hover:text-white" href="{{ route('legal.privacy') }}">{{ __('store.privacy') }}</a>
-                <a class="hover:text-white" href="{{ route('legal.refund') }}">{{ __('store.refund') }}</a>
-                <a class="hover:text-white" href="{{ route('legal.delivery') }}">{{ __('store.delivery_policy') }}</a>
-                <a class="hover:text-white" href="{{ route('legal.security') }}">{{ __('store.fraud_security') }}</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="border-t border-white/10">
-        <div class="mx-auto max-w-7xl px-5 py-6 lg:px-8">
+        <div class="mt-12 border-t border-white/[0.07] pt-7">
             <p class="max-w-5xl text-[11px] leading-5 text-slate-600">{{ __('store.trademark_notice') }}</p>
-            <div class="mt-4 flex flex-col gap-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+            <div class="mt-5 flex flex-col gap-3 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between">
                 <span>© {{ date('Y') }} {{ config('company.brand_full_name') }}.</span>
                 <span>{{ config('company.public_domain') }} • {{ $secureCommerce }} • AZN</span>
             </div>
