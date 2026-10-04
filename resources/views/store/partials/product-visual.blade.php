@@ -4,24 +4,21 @@
     if (str_contains($name, 'pubg')) {
         $visual = [
             'asset' => 'https://www.pubgmobile.com/images/event/brandassets/down-logo1.png',
-            'alt' => 'PUBG MOBILE official logo',
-            'source' => 'PUBG MOBILE Brand Assets',
+            'alt' => 'PUBG MOBILE logo',
             'panel' => 'from-[#241800] via-[#11131b] to-[#090b11]',
             'logoClass' => 'max-h-28 max-w-[72%]',
         ];
     } elseif (str_contains($name, 'free')) {
         $visual = [
             'asset' => 'https://dl.dir.freefiremobile.com/common/web_event/official2.ff.garena.all/20229/ebcec94a33d37c7b957e8a795240f732.jpg',
-            'alt' => 'FREE FIRE official logo',
-            'source' => 'Garena Free Fire Brand Assets',
+            'alt' => 'Free Fire logo',
             'panel' => 'from-[#1b1b1b] via-[#11131b] to-[#090b11]',
             'logoClass' => 'max-h-24 max-w-[72%] rounded-md',
         ];
     } elseif (str_contains($name, 'mobile legends')) {
         $visual = [
             'asset' => 'https://en.moonton.com/upload/image/20241226/55fed3965a19e53866d0cf1279460d50.png',
-            'alt' => 'Mobile Legends: Bang Bang official logo',
-            'source' => 'MOONTON Games media asset',
+            'alt' => 'Mobile Legends: Bang Bang logo',
             'panel' => 'from-[#221500] via-[#11131b] to-[#090b11]',
             'logoClass' => 'max-h-28 max-w-[82%]',
         ];
@@ -29,7 +26,6 @@
         $visual = [
             'asset' => asset('brand/playcharge-mark.svg'),
             'alt' => $product->name,
-            'source' => 'PlayCharge',
             'panel' => 'from-violet-950 via-[#11131b] to-[#090b11]',
             'logoClass' => 'max-h-24 max-w-[55%]',
         ];
@@ -52,9 +48,5 @@
             loading="lazy"
             referrerpolicy="no-referrer"
         >
-    </div>
-
-    <div class="absolute bottom-3 right-3 rounded-full border border-white/10 bg-black/35 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-white/45 backdrop-blur">
-        Official game logo
     </div>
 </div>
