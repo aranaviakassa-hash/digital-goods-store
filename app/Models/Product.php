@@ -62,6 +62,11 @@ class Product extends Model
             )
             ->whereNotNull(
                 'price'
+            )
+            ->where(
+                'price',
+                '>',
+                0
             );
     }
 
@@ -72,6 +77,14 @@ class Product extends Model
             && $this->is_active
             && $this->resale_verified
             && $this->bank_approved
-            && $this->price !== null;
+            && $this->price !== null
+            && (float) $this->price > 0;
+    }
+
+    public function isPurchasableNow(): bool
+    {
+        return
+            $this->isSellable()
+            && (bool) config('company.live_payment_enabled');
     }
 }
