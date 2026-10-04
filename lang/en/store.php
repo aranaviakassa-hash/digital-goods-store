@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     'products' => 'Products',
     'track_order' => 'Track order',
     'help' => 'Help',
@@ -11,35 +10,35 @@ return [
     'create_account' => 'Create account',
     'my_account' => 'My account',
 
-    'hero_badge' => 'Secure digital gaming store',
+    'hero_badge' => 'Digital gaming top-up store',
     'hero_title_1' => 'Everything your game needs.',
     'hero_title_2' => 'Fast and simple.',
-    'hero_text' => 'Buy game top-ups and digital products with transparent pricing, order tracking and a secure processing flow.',
+    'hero_text' => 'Explore game top-ups and digital products in one place. For activated products, ordering, payment and tracking will be handled through a secure flow.',
 
     'browse_products' => 'Browse products',
     'track_an_order' => 'Track an order',
 
-    'hero_point_secure' => 'Secure order flow',
+    'hero_point_secure' => 'Protected order flow',
     'hero_point_tracking' => 'Order tracking',
-    'hero_point_support' => 'Local support',
+    'hero_point_support' => 'AZ / EN / RU experience',
 
-    'trending_now' => 'Trending now',
+    'trending_now' => 'Featured games',
     'game_topups' => 'Game top-up services',
-    'online' => 'Online',
-    'delivery_estimate' => 'Typical processing',
-    'delivery_1_5_minutes' => '1–5 minutes',
+    'online' => 'Review mode',
+    'delivery_estimate' => 'Delivery',
+    'delivery_1_5_minutes' => 'After activation',
 
-    'secure_payments' => 'Secure payments',
+    'secure_payments' => 'Protected payments',
     'digital_delivery' => 'Digital delivery',
     'order_protection' => 'Order protection',
 
-    'trust_secure_title' => 'Secure checkout',
-    'trust_secure_text' => 'Server-side verification',
-    'trust_delivery_title' => 'Fast processing',
-    'trust_delivery_text' => 'Usually 1–5 minutes',
+    'trust_secure_title' => 'Protected checkout',
+    'trust_secure_text' => 'Server-side validation + HTTPS',
+    'trust_delivery_title' => 'Digital delivery',
+    'trust_delivery_text' => 'For activated products only',
     'trust_tracking_title' => 'Order tracking',
     'trust_tracking_text' => 'Check your status',
-    'trust_support_title' => 'Local support',
+    'trust_support_title' => 'Multilingual experience',
     'trust_support_text' => 'AZ / EN / RU',
 
     'featured' => 'Featured',
@@ -47,7 +46,14 @@ return [
     'popular_products_text' => 'Explore popular gaming top-up services in one place.',
     'view_all' => 'View all',
     'available' => 'Available',
+    'review_preview' => 'Review preview',
     'from' => 'From',
+    'pricing' => 'Pricing',
+    'pending_activation' => 'Pending activation',
+
+    'catalogue_eyebrow' => 'Digital catalogue',
+    'catalogue_title' => 'PlayCharge products',
+    'catalogue_intro' => 'Browse the PlayCharge gaming top-up catalogue. Products marked as review preview remain visible for information and bank-review purposes until commercial activation is complete.',
 
     'catalog_preparing' => 'Product catalogue is being prepared',
     'catalog_preparing_text' => 'Approved products will appear here when they are ready for sale.',
@@ -69,7 +75,7 @@ return [
 
     'popular_now' => 'Popular now',
     'trending_title' => 'Fast access to the games players choose most.',
-    'trending_text' => 'Discover products available in the catalogue without fabricated discounts or exaggerated promises.',
+    'trending_text' => 'Discover catalogue products without fabricated discounts or exaggerated promises.',
     'see_catalog' => 'See catalogue',
 
     'simple_process' => 'Simple process',
@@ -77,7 +83,7 @@ return [
     'how_it_works_text' => 'The ordering process is designed to be clear and simple.',
 
     'choose_product' => 'Choose product',
-    'complete_payment' => 'Complete payment',
+    'complete_payment' => 'Review payment',
     'receive_order' => 'Receive order',
 
     'step_choose_title' => 'Choose your game',
@@ -86,18 +92,18 @@ return [
     'step_details_title' => 'Enter your details',
     'step_details_text' => 'When required, carefully enter your Player ID, UID or other requested information.',
 
-    'step_payment_title' => 'Complete payment',
-    'step_payment_text' => 'Review the final amount at checkout and complete your payment.',
+    'step_payment_title' => 'Review amount and payment',
+    'step_payment_text' => 'When the bank integration is activated, you will review the final amount at checkout and complete payment there.',
 
     'step_delivery_title' => 'Receive your order',
-    'step_delivery_text' => 'Your order is processed and its status can be tracked at any time.',
+    'step_delivery_text' => 'For activated products, your order is processed and its status can be tracked at any time.',
 
-    'why_nexora_eyebrow' => 'Why NEXORA?',
+    'why_nexora_eyebrow' => 'Why PlayCharge?',
     'why_nexora_title' => 'More than a sale. A clear and trackable process.',
-    'why_nexora_text' => 'NEXORA is being built to make buying digital products transparent, trackable and secure.',
+    'why_nexora_text' => 'PlayCharge is being built to make buying digital products transparent, trackable and secure.',
 
     'why_speed_title' => 'Fast processing',
-    'why_speed_text' => 'Eligible orders are usually processed within 1–5 minutes. Exceptional reviews may take up to 24 hours.',
+    'why_speed_text' => 'After commercial activation, eligible orders are intended to be processed as quickly as possible; exceptional reviews may take longer.',
 
     'why_tracking_title' => 'Order tracking',
     'why_tracking_text' => 'Track your order status using the order number and secure access controls.',
@@ -111,7 +117,7 @@ return [
     'learn_more' => 'Learn more',
 
     'registered_business' => 'Registered business',
-    'company_transparency_text' => 'NEXORA provides transparent seller information for customers and payment partners.',
+    'company_transparency_text' => 'PlayCharge provides transparent seller information for customers and payment partners.',
 
     'tax_id' => 'Tax ID',
     'address' => 'Legal address',
@@ -121,7 +127,7 @@ return [
     'view_legal' => 'Legal information',
 
     'final_cta_title' => 'Ready for your next top-up?',
-    'final_cta_text' => 'Browse the catalogue, choose the right product and start your order.',
+    'final_cta_text' => 'Browse the catalogue, choose a product and start the order flow once that product is activated.',
 
     'customer' => 'Customer',
     'legal' => 'Legal',
@@ -133,4 +139,7 @@ return [
     'delivery_policy' => 'Delivery Policy',
     'fraud_security' => 'Fraud & Security',
 
+    'footer_text' => 'PlayCharge platform for digital gaming products and top-up services.',
+    'operated_by' => 'PlayCharge is operated by :company.',
+    'trademark_notice' => 'Game names, logos and trademarks belong to their respective owners. Unless expressly stated, PlayCharge does not claim partnership, endorsement or official affiliation with those publishers.',
 ];
