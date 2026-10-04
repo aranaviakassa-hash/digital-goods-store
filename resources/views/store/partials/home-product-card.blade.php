@@ -40,12 +40,12 @@
             @if($isSellable)
                 <span class="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400">
                     <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
-                    Available
+                    {{ __('store.available') }}
                 </span>
             @else
                 <span class="flex items-center gap-1.5 text-[11px] font-semibold text-amber-300">
                     <span class="h-1.5 w-1.5 rounded-full bg-amber-300"></span>
-                    Review preview
+                    {{ __('store.review_preview') }}
                 </span>
             @endif
         </div>
@@ -61,8 +61,8 @@
                         <span class="text-sm font-semibold text-slate-500">{{ $product->currency }}</span>
                     </div>
                 @else
-                    <div class="text-[11px] uppercase tracking-wider text-slate-600">Pricing</div>
-                    <div class="mt-1 max-w-44 text-sm font-semibold leading-5 text-slate-300">Pending activation</div>
+                    <div class="text-[11px] uppercase tracking-wider text-slate-600">{{ __('store.pricing') }}</div>
+                    <div class="mt-1 max-w-44 text-sm font-semibold leading-5 text-slate-300">{{ __('store.pending_activation') }}</div>
                 @endif
             </div>
 
